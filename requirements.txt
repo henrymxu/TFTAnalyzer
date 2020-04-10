@@ -1,0 +1,7 @@
+pyautogui
+win32gui
+fuzzywuzzy
+pytesseract
+opencv-python
+Pillow
+numpy

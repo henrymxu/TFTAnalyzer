@@ -185,8 +185,8 @@ def _parse_image_for_text(image, config, pre_process=True):
         ret, thresh1 = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
         img_processed = cv2.inRange(thresh1, 0, 0)
     text = pytesseract.image_to_string(img_processed, lang='eng', config=config)
-    title = text
-    if text == "":
-        title = utils.generate_random_window_title()
+    # title = text
+    # if text == "":
+    #     title = utils.generate_random_window_title()
     # cv2.imshow(title, img_processed)
     return text

@@ -5,11 +5,13 @@ import time
 import cv2
 import pyautogui
 
+
 # TODO: Remove
 def onMouseClick(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         print('x = %d, y = %d' % (x, y))
     # draw circle here (etc...)
+
 
 # TODO: Remove
 def dragMouse():
@@ -17,6 +19,7 @@ def dragMouse():
     pyautogui.moveRel(0, 10)  # move mouse 10 pixels down
     pyautogui.dragTo(100, 150)
     pyautogui.dragRel(0, 10)  # drag mouse 10 pixels down
+
 
 # TODO: Remove
 def mouseStuff():

@@ -1,4 +1,4 @@
-from . import tracker, game
+from tft import tracker, game
 
 
 def main():

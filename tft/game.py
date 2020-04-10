@@ -86,9 +86,7 @@ def track_game(gameWindow, gameBoard, gameTracker, debug=False):
         gold = tracker.determine_gold(image_utils.crop_shape(img, gameBoard.getGold()[0], 150))
         shop = tracker.determine_shop(image_utils.crop_shapes(img, gameBoard.getShop(), 200))
         print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
-
-        print("stage {}, level {}, gold {}".format(stage, level, gold))
-        print("shop {}".format(shop))
+        print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
         if gameTracker.hasShopChanged(shop):
             gameTracker.addShop(shop, stage, level, gold)
