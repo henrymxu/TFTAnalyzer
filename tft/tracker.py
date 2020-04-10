@@ -9,14 +9,16 @@ from tft import utils
 
 
 class Tracker:
-    def __init__(self, players):
+    def __init__(self, players, write=True):
         self.__unitLookupTable = self._initializeUnitLookupTable()
-        self.__stage = []
         self.__shops = []
+        self.__state = {}
         self.__players = players
-        ts = time.time()
-        self.__fileName = "test/{}.json".format(str(int(ts)))
-        # utils.create_json_file(self.__fileName)
+        self.__write = write
+        if write:
+            ts = time.time()
+            self.__fileName = "test/{}.json".format(str(int(ts)))
+            utils.create_json_file(self.__fileName)
 
     def _initializeUnitLookupTable(self):
         """
@@ -47,24 +49,28 @@ class Tracker:
             return ""
         choice = process.extract(unit, self.__unitLookupTable, limit=1, scorer=fuzz.QRatio)
         if choice[0][1] <= 75:
-            #print("Not a Match: {} != {}, score = {}".format(unit, choice[0][0], choice[0][1]))
+            # print("Not a Match: {} != {}, score = {}".format(unit, choice[0][0], choice[0][1]))
             return ""
-        #print("Found Match: {} == {}, score = {}".format(unit, choice[0][0], choice[0][1]))
+        # print("Found Match: {} == {}, score = {}".format(unit, choice[0][0], choice[0][1]))
         return choice[0][0]
 
     def hasShopChanged(self, units):
         """
         Determines whether or not the shop has changed.
 
-        :param units: list of unprocessed units (strings)
+        New shop items are compared to the previous shop items.  If 2 or more slots have different units,
+        then the shop is considered changed.
+
+        TODO: check gold/stage?
+
+        :param units: list of post-processed units (validated and corrected with UnitLookupTable)
         :return: boolean
         """
-        units = [self._findUnitInLookupTable(i) for i in units]
         units_changed = 0
-        for i in range(0, 4):
+        for i in range(0, 5):
             if units[i] == "":
                 continue
-            if len(self.__shops) == 0:
+            if not self.__shops:
                 return True
             if not self.__shops[-1]["units"][i] == units[i]:
                 units_changed += 1
@@ -77,21 +83,39 @@ class Tracker:
         :param stage: string with format (x-y)
         :return: boolean
         """
-        if self.__stage and self.__stage[-1] == stage:
+        if self.__state and self.__state["stage"] and self.__state["stage"] == stage:
             return False
         return True
 
-    def addStage(self, stage):
-        self.__stage.append(stage)
+    def addStage(self, stage, healthbars, level, gold):
+        if self.__state and self.__write:
+            utils.append_to_json_file(self.__fileName, self.__state)
+        self.__shops.clear()
+        self.__state = _create_state(stage, healthbars, level, gold, self.__shops)
 
-    def addShop(self, units, stage, level, gold):
-        shop = _create_shop(units, level, stage, gold)
+    def addShopIfChanged(self, units, level, gold):
+        """
+        Add a shop to the tracker if has yet to be added, along with the current level and gold amount.
+
+        :param units: list of pre-processed units
+        :param level:
+        :param gold:
+        :return: boolean
+        """
+        units = [self._findUnitInLookupTable(i) for i in units]
+        if not self.hasShopChanged(units):
+            return False
+        shop = _create_shop(units, level, gold)
         self.__shops.append(shop)
-        # utils.append_to_json_file(self.__fileName, shop)
+        return True
 
 
-def _create_shop(units, level, stage, gold):
-    return {"units": units, "level": level, "stage": stage, "gold": gold}
+def _create_shop(units, level, gold):
+    return {"units": units, "level": level, "gold": gold}
+
+
+def _create_state(stage, healthbars, level, gold, shops):
+    return {"stage": stage, "healthbars": healthbars, "level": level, "gold": gold, "shops": shops}
 
 
 def determine_gold(img):

@@ -1,9 +1,12 @@
 import json
+import os
 import re
 import sys
 import time
 import cv2
 import pyautogui
+
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 
 # TODO: Remove
@@ -42,20 +45,20 @@ def end_timer(start):
 
 
 def open_json_file(file):
-    with open(file) as json_file:
+    with open(os.path.join(_ROOT, file)) as json_file:
         data = json.load(json_file)
     return data
 
 
 def create_json_file(file):
-    with open(file, mode='w', encoding='utf-8') as f:
+    with open(os.path.join(_ROOT, file), mode='w', encoding='utf-8') as f:
         json.dump([], f)
 
 
 def append_to_json_file(file, data):
-    with open(file, mode='r', encoding='utf-8') as feed:
+    with open(os.path.join(_ROOT, file), mode='r', encoding='utf-8') as feed:
         feeds = json.load(feed)
-    with open(file, mode='w', encoding='utf-8') as feed:
+    with open(os.path.join(_ROOT, file), mode='w', encoding='utf-8') as feed:
         feeds.append(data)
         json.dump(feeds, feed)
 

@@ -88,9 +88,6 @@ def track_game(gameWindow, gameBoard, gameTracker, debug=False):
         print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
         print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
-        if gameTracker.hasShopChanged(shop):
-            gameTracker.addShop(shop, stage, level, gold)
-
         if gameTracker.hasStageChanged(stage):
             top_to_bottom = (image_utils.crop_shapes(img, gameBoard.getHealthBars1()[0], 150),
                              image_utils.crop_shapes(img, gameBoard.getHealthBars1()[1], 200))
@@ -100,7 +97,9 @@ def track_game(gameWindow, gameBoard, gameTracker, debug=False):
             healthbars = tracker.determine_healthbars((top_to_bottom, bottom_to_top))
             print("healthbars gathering exec time: {} seconds".format(utils.end_timer(timer)))
             print("healthbars {}".format(healthbars))
-            gameTracker.addStage(stage)
+            gameTracker.addStage(stage, healthbars, level, gold)
+
+        gameTracker.addShopIfChanged(shop, level, gold)
 
         if debug:
             debug_screen(img, gameBoard)
