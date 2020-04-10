@@ -1,6 +1,4 @@
 import time
-from queue import Queue
-from threading import Thread
 
 import cv2
 import numpy as np
@@ -129,41 +127,14 @@ def determine_healthbars(img_directions):
     :return:
     """
     healthbars = []
-    queue = Queue()
     for img in img_directions:
         for player in range(0, 8):
-            worker = OCRWorker(queue, healthbars)
-            worker.daemon = True
-            worker.start()
-            task1 = (img[0][player], '--psm 7 --oem 3')
-            task2 = (img[1][player], '--psm 7 -c tessedit_char_whitelist=1234567890')
-            queue.put((task1, task2))
-            # name1 = _parse_image_for_text(names1[player], '--psm 7 --oem 3')
-            # health1 = _parse_image_for_text(values1[player], '--psm 7 -c tessedit_char_whitelist=1234567890')
-            # name2 = _parse_image_for_text(names2[player], '--psm 7 --oem 3')
-            # health2 = _parse_image_for_text(values2[player], '--psm 7 -c tessedit_char_whitelist=1234567890')
-    queue.join()
+            name = _parse_image_for_text(img[0][player], '--psm 7 --oem 3')
+            health = _parse_image_for_text(img[1][player], '--psm 7 -c tessedit_char_whitelist=1234567890')
+
+            if health.isnumeric():
+                healthbars.append((name, health))
     return healthbars
-
-
-def determine_healthbars_task(name_params, health_params):
-    name = _parse_image_for_text(name_params[0], name_params[1])
-    health = _parse_image_for_text(health_params[0], health_params[1])
-    return name, health
-
-
-class OCRWorker(Thread):
-    def __init__(self, queue, result):
-        Thread.__init__(self)
-        self.queue = queue
-        self.result = result
-
-    def run(self):
-        name_params, health_params = self.queue.get()
-        healthbar = determine_healthbars_task(name_params, health_params)
-        if healthbar[1].isnumeric():
-            self.result.append(healthbar)
-        self.queue.task_done()
 
 
 def determine_players(images):
