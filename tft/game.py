@@ -1,4 +1,4 @@
-from tft import board, utils, tracker, window, image_utils
+from tft import board, utils, tracker, window, image_utils, parser
 
 DebugWindowName = "TFTAnalyzer Debug"
 WindowName = "League of Legends (TM) Client"
@@ -81,10 +81,10 @@ def track_game(gameWindow, gameBoard, gameTracker, debug=False):
         img = gameWindow.captureWindow()
 
         timer = utils.start_timer()
-        stage = tracker.determine_stage(image_utils.crop_shape(img, gameBoard.getStage()[0], 200))
-        level = tracker.determine_level(image_utils.crop_shape(img, gameBoard.getLevel()[0], 150))
-        gold = tracker.determine_gold(image_utils.crop_shape(img, gameBoard.getGold()[0], 150))
-        shop = tracker.determine_shop(image_utils.crop_shapes(img, gameBoard.getShop(), 200))
+        stage = parser.parse_stage(image_utils.crop_shape(img, gameBoard.getStage()[0], 200))
+        level = parser.parse_level(image_utils.crop_shape(img, gameBoard.getLevel()[0], 150))
+        gold = parser.parse_gold(image_utils.crop_shape(img, gameBoard.getGold()[0], 150))
+        shop = parser.parse_shop(image_utils.crop_shapes(img, gameBoard.getShop(), 200))
         print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
         print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
@@ -94,7 +94,7 @@ def track_game(gameWindow, gameBoard, gameTracker, debug=False):
             bottom_to_top = (image_utils.crop_shapes(img, gameBoard.getHealthBars2()[0], 150),
                              image_utils.crop_shapes(img, gameBoard.getHealthBars2()[1], 200))
             timer = utils.start_timer()
-            healthbars = tracker.determine_healthbars((top_to_bottom, bottom_to_top))
+            healthbars = parser.parse_healthbars((top_to_bottom, bottom_to_top))
             print("healthbars gathering exec time: {} seconds".format(utils.end_timer(timer)))
             print("healthbars {}".format(healthbars))
             gameTracker.addStage(stage, healthbars, level, gold)

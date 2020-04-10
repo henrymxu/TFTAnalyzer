@@ -50,7 +50,7 @@ def open_json_file(file):
     return data
 
 
-def create_json_file(file):
+def create_json_array_file(file):
     with open(os.path.join(_ROOT, file), mode='w', encoding='utf-8') as f:
         json.dump([], f)
 
