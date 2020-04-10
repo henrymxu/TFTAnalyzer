@@ -53,12 +53,12 @@ def __create_grid_of_rectangles_from_data(data, rows, columns):
                                        data["y_gap"], rows, columns)
 
 
-def __create_column_of_rectangles_from_data(data, repeat):
-    return __create_column_of_rectangles(data["x"], data["y"], data["width"], data["height"], data["gap"], repeat)
+def __create_column_of_rectangles_from_data(data, rows):
+    return __create_column_of_rectangles(data["x"], data["y"], data["width"], data["height"], data["gap"], rows)
 
 
-def __create_row_of_rectangles_from_data(data, repeat):
-    return __create_row_of_rectangles(data["x"], data["y"], data["width"], data["height"], data["gap"], repeat)
+def __create_row_of_rectangles_from_data(data, columns):
+    return __create_row_of_rectangles(data["x"], data["y"], data["width"], data["height"], data["gap"], columns)
 
 
 def __create_rectangle_from_data(data):
@@ -79,9 +79,9 @@ def __create_grid_of_rectangles(x_offset, y_offset, width, height, x_gap, y_gap,
     return result
 
 
-def __create_column_of_rectangles(x_offset, y_offset, width, height, gap, repeat):
+def __create_column_of_rectangles(x_offset, y_offset, width, height, gap, rows):
     result = []
-    for row in range(0, repeat):
+    for row in range(0, rows):
         ys = [0, height]
         ys = [y + (y_offset + row * (height + gap)) for y in ys]
         xs = [0, width]
@@ -92,9 +92,9 @@ def __create_column_of_rectangles(x_offset, y_offset, width, height, gap, repeat
     return result
 
 
-def __create_row_of_rectangles(x_offset, y_offset, width, height, gap, repeat):
+def __create_row_of_rectangles(x_offset, y_offset, width, height, gap, columns):
     result = []
-    for column in range(0, repeat):
+    for column in range(0, columns):
         ys = [0, height]
         ys = [y + y_offset for y in ys]
         xs = [0, width]

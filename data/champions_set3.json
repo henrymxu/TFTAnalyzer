@@ -4,8 +4,8 @@
     "championId": "TFT3_Ahri",
     "cost": 2,
     "traits": [
-        "Star Guardian",
-        "Sorcerer"
+      "Star Guardian",
+      "Sorcerer"
     ]
   },
   {
@@ -13,8 +13,8 @@
     "championId": "TFT3_Annie",
     "cost": 2,
     "traits": [
-        "Mech-Pilot",
-        "Sorcerer"
+      "Mech-Pilot",
+      "Sorcerer"
     ]
   },
   {
@@ -22,8 +22,8 @@
     "championId": "TFT3_Ashe",
     "cost": 3,
     "traits": [
-        "Celestial",
-        "Sniper"
+      "Celestial",
+      "Sniper"
     ]
   },
   {
@@ -31,8 +31,8 @@
     "championId": "TFT3_AurelionSol",
     "cost": 5,
     "traits": [
-        "Rebel",
-        "Starship"
+      "Rebel",
+      "Starship"
     ]
   },
   {
@@ -40,8 +40,8 @@
     "championId": "TFT3_Blitzcrank",
     "cost": 2,
     "traits": [
-        "Chrono",
-        "Brawler"
+      "Chrono",
+      "Brawler"
     ]
   },
   {
@@ -49,8 +49,8 @@
     "championId": "TFT3_Caitlyn",
     "cost": 1,
     "traits": [
-        "Chrono",
-        "Sniper"
+      "Chrono",
+      "Sniper"
     ]
   },
   {
@@ -58,8 +58,8 @@
     "championId": "TFT3_ChoGath",
     "cost": 4,
     "traits": [
-        "Void",
-        "Brawler"
+      "Void",
+      "Brawler"
     ]
   },
   {
@@ -67,8 +67,8 @@
     "championId": "TFT3_Darius",
     "cost": 2,
     "traits": [
-        "Space Pirate",
-        "Mana-Reaver"
+      "Space Pirate",
+      "Mana-Reaver"
     ]
   },
   {
@@ -76,8 +76,8 @@
     "championId": "TFT3_Ekko",
     "cost": 5,
     "traits": [
-        "Cybernetic",
-        "Infiltrato"
+      "Cybernetic",
+      "Infiltrato"
     ]
   },
   {
@@ -85,8 +85,8 @@
     "championId": "TFT3_Ezreal",
     "cost": 3,
     "traits": [
-        "Chrono",
-        "Blaster"
+      "Chrono",
+      "Blaster"
     ]
   },
   {
@@ -94,8 +94,8 @@
     "championId": "TFT3_Fiora",
     "cost": 1,
     "traits": [
-        "Cybernetic",
-        "Blademaster"
+      "Cybernetic",
+      "Blademaster"
     ]
   },
   {
@@ -103,8 +103,8 @@
     "championId": "TFT3_Fizz",
     "cost": 4,
     "traits": [
-        "Mech-Pilot",
-        "Infiltrator"
+      "Mech-Pilot",
+      "Infiltrator"
     ]
   },
   {
@@ -112,9 +112,9 @@
     "championId": "TFT3_Gangplank",
     "cost": 5,
     "traits": [
-        "Space Pirate",
-        "Mercenary",
-        "Demolitionist"
+      "Space Pirate",
+      "Mercenary",
+      "Demolitionist"
     ]
   },
   {
@@ -122,8 +122,8 @@
     "championId": "TFT3_Graves",
     "cost": 1,
     "traits": [
-        "Space Pirate",
-        "Blaster"
+      "Space Pirate",
+      "Blaster"
     ]
   },
   {
@@ -131,9 +131,9 @@
     "championId": "TFT3_Irelia",
     "cost": 4,
     "traits": [
-        "Cybernetic",
-        "Mana-Reaver",
-        "Blademaster"
+      "Cybernetic",
+      "Mana-Reaver",
+      "Blademaster"
     ]
   },
   {
@@ -141,8 +141,8 @@
     "championId": "TFT3_JarvanIV",
     "cost": 1,
     "traits": [
-        "Dark Star",
-        "Protector"
+      "Dark Star",
+      "Protector"
     ]
   },
   {
@@ -150,8 +150,8 @@
     "championId": "TFT3_Jayce",
     "cost": 3,
     "traits": [
-        "Space Pirate",
-        "Vanguard"
+      "Space Pirate",
+      "Vanguard"
     ]
   },
   {
@@ -159,8 +159,8 @@
     "championId": "TFT3_Jhin",
     "cost": 4,
     "traits": [
-        "Dark Star",
-        "Sniper"
+      "Dark Star",
+      "Sniper"
     ]
   },
   {
@@ -168,8 +168,8 @@
     "championId": "TFT3_Jinx",
     "cost": 4,
     "traits": [
-        "Rebel",
-        "Blaster"
+      "Rebel",
+      "Blaster"
     ]
   },
   {
@@ -177,8 +177,8 @@
     "championId": "TFT3_KaiSa",
     "cost": 2,
     "traits": [
-        "Valkyrie",
-        "Infiltrator"
+      "Valkyrie",
+      "Infiltrator"
     ]
   },
   {
@@ -186,8 +186,8 @@
     "championId": "TFT3_Karma",
     "cost": 3,
     "traits": [
-        "Dark Star",
-        "Mystic"
+      "Dark Star",
+      "Mystic"
     ]
   },
   {
@@ -195,8 +195,8 @@
     "championId": "TFT3_Kassadin",
     "cost": 3,
     "traits": [
-        "Celestial",
-        "Mana-Reaver"
+      "Celestial",
+      "Mana-Reaver"
     ]
   },
   {
@@ -204,8 +204,8 @@
     "championId": "TFT3_Kayle",
     "cost": 4,
     "traits": [
-        "Valkyrie",
-        "Blademaster"
+      "Valkyrie",
+      "Blademaster"
     ]
   },
   {
@@ -213,8 +213,8 @@
     "championId": "TFT3_KhaZix",
     "cost": 1,
     "traits": [
-        "Void",
-        "Infiltrator"
+      "Void",
+      "Infiltrator"
     ]
   },
   {
@@ -222,8 +222,8 @@
     "championId": "TFT3_Leona",
     "cost": 1,
     "traits": [
-        "Cybernetic",
-        "Vanguard"
+      "Cybernetic",
+      "Vanguard"
     ]
   },
   {
@@ -231,8 +231,8 @@
     "championId": "TFT3_Lucian",
     "cost": 2,
     "traits": [
-        "Cybernetic",
-        "Blaster"
+      "Cybernetic",
+      "Blaster"
     ]
   },
   {
@@ -240,8 +240,8 @@
     "championId": "TFT3_Lulu",
     "cost": 5,
     "traits": [
-        "Celestial",
-        "Mystic"
+      "Celestial",
+      "Mystic"
     ]
   },
   {
@@ -249,8 +249,8 @@
     "championId": "TFT3_Lux",
     "cost": 3,
     "traits": [
-        "Dark Star",
-        "Sorcerer"
+      "Dark Star",
+      "Sorcerer"
     ]
   },
   {
@@ -258,8 +258,8 @@
     "championId": "TFT3_Malphite",
     "cost": 1,
     "traits": [
-        "Rebel",
-        "Brawler"
+      "Rebel",
+      "Brawler"
     ]
   },
   {
@@ -267,8 +267,8 @@
     "championId": "TFT3_MasterYi",
     "cost": 3,
     "traits": [
-        "Rebel",
-        "Blademaster"
+      "Rebel",
+      "Blademaster"
     ]
   },
   {
@@ -276,9 +276,9 @@
     "championId": "TFT3_MissFortune",
     "cost": 5,
     "traits": [
-        "Valkyrie",
-        "Mercenary",
-        "Blaster"
+      "Valkyrie",
+      "Mercenary",
+      "Blaster"
     ]
   },
   {
@@ -286,8 +286,8 @@
     "championId": "TFT3_Mordekaiser",
     "cost": 2,
     "traits": [
-        "Dark Star",
-        "Vanguard"
+      "Dark Star",
+      "Vanguard"
     ]
   },
   {
@@ -295,8 +295,8 @@
     "championId": "TFT3_Neeko",
     "cost": 3,
     "traits": [
-        "Star Guardian",
-        "Protector"
+      "Star Guardian",
+      "Protector"
     ]
   },
   {
@@ -304,8 +304,8 @@
     "championId": "TFT3_Poppy",
     "cost": 1,
     "traits": [
-        "Star Guardian",
-        "Vanguard"
+      "Star Guardian",
+      "Vanguard"
     ]
   },
   {
@@ -313,8 +313,8 @@
     "championId": "TFT3_Rakan",
     "cost": 2,
     "traits": [
-        "Celestial",
-        "Protector"
+      "Celestial",
+      "Protector"
     ]
   },
   {
@@ -322,8 +322,8 @@
     "championId": "TFT3_Rumble",
     "cost": 3,
     "traits": [
-        "Mech-Pilot",
-        "Demolitionist"
+      "Mech-Pilot",
+      "Demolitionist"
     ]
   },
   {
@@ -331,8 +331,8 @@
     "championId": "TFT3_Shaco",
     "cost": 3,
     "traits": [
-        "Dark Star",
-        "Infiltrator"
+      "Dark Star",
+      "Infiltrator"
     ]
   },
   {
@@ -340,8 +340,8 @@
     "championId": "TFT3_Shen",
     "cost": 2,
     "traits": [
-        "Chrono",
-        "Blademaster"
+      "Chrono",
+      "Blademaster"
     ]
   },
   {
@@ -349,8 +349,8 @@
     "championId": "TFT3_Sona",
     "cost": 2,
     "traits": [
-        "Rebel",
-        "Mystic"
+      "Rebel",
+      "Mystic"
     ]
   },
   {
@@ -358,8 +358,8 @@
     "championId": "TFT3_Soraka",
     "cost": 4,
     "traits": [
-        "Star Guardian",
-        "Mystic"
+      "Star Guardian",
+      "Mystic"
     ]
   },
   {
@@ -367,8 +367,8 @@
     "championId": "TFT3_Syndra",
     "cost": 3,
     "traits": [
-        "Star Guardian",
-        "Sorcerer"
+      "Star Guardian",
+      "Sorcerer"
     ]
   },
   {
@@ -376,8 +376,8 @@
     "championId": "TFT3_Thresh",
     "cost": 5,
     "traits": [
-        "Chrono",
-        "Mana-Reaver"
+      "Chrono",
+      "Mana-Reaver"
     ]
   },
   {
@@ -385,8 +385,8 @@
     "championId": "TFT3_TwistedFate",
     "cost": 1,
     "traits": [
-        "Chrono",
-        "Sorcerer"
+      "Chrono",
+      "Sorcerer"
     ]
   },
   {
@@ -394,8 +394,8 @@
     "championId": "TFT3_VelKoz",
     "cost": 4,
     "traits": [
-        "Void",
-        "Sorcerer"
+      "Void",
+      "Sorcerer"
     ]
   },
   {
@@ -403,8 +403,8 @@
     "championId": "TFT3_Vi",
     "cost": 3,
     "traits": [
-        "Cybernetic",
-        "Brawler"
+      "Cybernetic",
+      "Brawler"
     ]
   },
   {
@@ -412,8 +412,8 @@
     "championId": "TFT3_WuKong",
     "cost": 4,
     "traits": [
-        "Chrono",
-        "Vanguard"
+      "Chrono",
+      "Vanguard"
     ]
   },
   {
@@ -421,8 +421,8 @@
     "championId": "TFT3_Xayah",
     "cost": 1,
     "traits": [
-        "Celestial",
-        "Blademaster"
+      "Celestial",
+      "Blademaster"
     ]
   },
   {
@@ -430,8 +430,8 @@
     "championId": "TFT3_XinZhao",
     "cost": 2,
     "traits": [
-        "Celestial",
-        "Protector"
+      "Celestial",
+      "Protector"
     ]
   },
   {
@@ -439,8 +439,8 @@
     "championId": "TFT3_Yasuo",
     "cost": 2,
     "traits": [
-        "Rebel",
-        "Blademaster"
+      "Rebel",
+      "Blademaster"
     ]
   },
   {
@@ -448,8 +448,8 @@
     "championId": "TFT3_Ziggs",
     "cost": 1,
     "traits": [
-        "Rebel",
-        "Demolitionist"
+      "Rebel",
+      "Demolitionist"
     ]
   },
   {
@@ -457,8 +457,56 @@
     "championId": "TFT3_Zoe",
     "cost": 1,
     "traits": [
-        "Star Guardian",
-        "Sorcerer"
+      "Star Guardian",
+      "Sorcerer"
+    ]
+  },
+  {
+    "name": "Faster Impact",
+    "championId": "TFT3_Faster_Impact",
+    "cost": 8,
+    "trait": [
+      "Upgrade"
+    ]
+  },
+  {
+    "name": "Larger Area",
+    "championId": "TFT3_Larger_Area",
+    "cost": 8,
+    "trait": [
+      "Upgrade"
+    ]
+  },
+  {
+    "name": "Two Strikes",
+    "championId": "TFT3_Two_Strikes",
+    "cost": 8,
+    "trait": [
+      "Upgrade"
+    ]
+  },
+  {
+    "name": "Larger Cone",
+    "championId": "TFT3_Larger_Cone",
+    "cost": 8,
+    "trait": [
+      "Upgrade"
+    ]
+  },
+  {
+    "name": "Shield",
+    "championId": "TFT3_Shield",
+    "cost": 8,
+    "trait": [
+      "Upgrade"
+    ]
+  },
+  {
+    "name": "More Waves",
+    "championId": "TFT3_More_Waves",
+    "cost": 8,
+    "trait": [
+      "Upgrade"
     ]
   }
 ]
