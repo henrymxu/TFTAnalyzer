@@ -47,6 +47,11 @@ def parse_healthbars(img_directions):
 
 
 def parse_players(images):
+    """
+    Determines the players in the game from the loading screen
+    :param images: image of the loading screen
+    :return: list of players
+    """
     players = []
     for image in images:
         players.append(_parse_image_for_text(image, '--psm 7'))

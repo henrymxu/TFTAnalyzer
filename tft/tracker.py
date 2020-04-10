@@ -1,23 +1,21 @@
-import time
-
 from fuzzywuzzy import process, fuzz
 
 from tft import utils
 
-_FileLocation = "test/{}.json"
-
 
 class Tracker:
-    def __init__(self, players, write=True):
+    def __init__(self, players, file_name=None):
         self.__unitLookupTable = self._initializeUnitLookupTable()
         self.__shops = []
         self.__state = {}
         self.__players = players
-        self.__write = write
-        if write:
-            ts = time.time()
-            self.__fileName = _FileLocation.format(str(int(ts)))
-            utils.create_json_array_file(self.__fileName)
+        if file_name:
+            self.__file_name = file_name
+            utils.create_json_array_file(self.__file_name)
+
+    def __writeToFile(self, data):
+        if self.__file_name:
+            utils.append_to_json_file(self.__file_name, self.__state)
 
     def _initializeUnitLookupTable(self):
         """
@@ -87,8 +85,8 @@ class Tracker:
         return True
 
     def addStage(self, stage, healthbars, level, gold):
-        if self.__state and self.__write:
-            utils.append_to_json_file(self.__fileName, self.__state)
+        if self.__state:
+            self.__writeToFile(self.__state)
         self.__shops.clear()
         self.__state = _create_state(stage, healthbars, level, gold, self.__shops)
 
