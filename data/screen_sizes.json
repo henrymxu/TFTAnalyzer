@@ -1,0 +1,140 @@
+{
+  "1080": {
+    "size": [
+      1920,
+      1080
+    ],
+    "contents": {
+      "stage": {
+        "x": 778,
+        "y": 10,
+        "width": 35,
+        "height": 25
+      },
+      "level": {
+        "x": 315,
+        "y": 880,
+        "width": 20,
+        "height": 30
+      },
+      "shop": {
+        "x": 480,
+        "y": 1040,
+        "width": 140,
+        "height": 30,
+        "gap": 62
+      },
+      "gold": {
+        "x": 874,
+        "y": 882,
+        "width": 30,
+        "height": 30
+      },
+      "players": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "x_gap": 0,
+        "y_gap": 0
+      },
+      "health_bar_names_top_to_bottom": {
+        "x": 1660,
+        "y": 200,
+        "width": 160,
+        "height": 31,
+        "gap": 41
+      },
+      "health_bar_values_top_to_bottom": {
+        "x": 1822,
+        "y": 205,
+        "width": 28,
+        "height": 20,
+        "gap": 52
+      },
+      "health_bar_names_bottom_to_top": {
+        "x": 1660,
+        "y": 222,
+        "width": 160,
+        "height": 31,
+        "gap": 41
+      },
+      "health_bar_values_bottom_to_top": {
+        "x": 1822,
+        "y": 227,
+        "width": 28,
+        "height": 20,
+        "gap": 52
+      }
+    }
+  },
+  "1421": {
+    "size": [
+      2560,
+      1440
+    ],
+    "contents": {
+      "stage": {
+        "x": 1035,
+        "y": 15,
+        "width": 50,
+        "height": 30
+      },
+      "level": {
+        "x": 420,
+        "y": 1178,
+        "width": 25,
+        "height": 30
+      },
+      "shop": {
+        "x": 640,
+        "y": 1387,
+        "width": 180,
+        "height": 30,
+        "gap": 89
+      },
+      "gold": {
+        "x": 1165,
+        "y": 1178,
+        "width": 40,
+        "height": 30
+      },
+      "players": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "x_gap": 0,
+        "y_gap": 0
+      },
+      "health_bar_names_top_to_bottom": {
+        "x": 2260,
+        "y": 264,
+        "width": 160,
+        "height": 46,
+        "gap": 50
+      },
+      "health_bar_values_top_to_bottom": {
+        "x": 2430,
+        "y": 270,
+        "width": 30,
+        "height": 30,
+        "gap": 66
+      },
+      "health_bar_names_bottom_to_top": {
+        "x": 2260,
+        "y": 294,
+        "width": 160,
+        "height": 46,
+        "gap": 50
+      },
+      "health_bar_values_bottom_to_top": {
+        "x": 2430,
+        "y": 300,
+        "width": 30,
+        "height": 30,
+        "gap": 66
+      }
+    }
+  }
+}
