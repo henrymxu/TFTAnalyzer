@@ -1,7 +1,7 @@
-from tft import utils
+from tft import utils, image_utils
 
 
-class GameBoard:
+class gameBoard:
     def __init__(self, size):
         self.__vertices = _generate_vertices(size)
 
@@ -27,11 +27,20 @@ class GameBoard:
         return self.__vertices["health_bar_names_2"], self.__vertices["health_bar_values_2"]
 
 
-def _generate_vertices(size):
+def _get_screen_size_data(size):
     data = utils.open_json_file("data/screen_sizes.json")
-    if str(size[1]) not in data:
-        utils.exit_with_error("Unsupported screen size: {}".format(size[1]))
-    size_data = data[str(size[1])]["contents"]
+    user_resolution = size[1]
+    for resolution in data:
+        value = int(resolution)
+        min_res = value * 0.98
+        max_res = value * 1.02
+        if min_res < user_resolution < max_res:
+            return data[resolution]["contents"]
+    utils.exit_with_error("Unsupported screen size: {}".format(size[1]))
+
+
+def _generate_vertices(size):
+    size_data = _get_screen_size_data(size)
     vertices = {"gold": __create_rectangle_from_data(size_data["gold"]),
                 "shop": __create_row_of_rectangles_from_data(size_data["shop"], 5),
                 "level": __create_rectangle_from_data(size_data["level"]),
@@ -110,3 +119,32 @@ def __create_rectangle(x_offset, y_offset, width, height):
     x = [x_offset, x_offset + width]
     vertices = [[x[0], y[0]], [x[1], y[0]], [x[1], y[1]], [x[0], y[1]]]
     return [vertices]
+
+def crop_stage(img, gameBoard):
+    return image_utils.crop_shape(img, gameBoard.getStage()[0], 200)
+
+
+def crop_level(img, gameBoard):
+    return image_utils.crop_shape(img, gameBoard.getLevel()[0], 150)
+
+
+def crop_gold(img, gameBoard):
+    return image_utils.crop_shape(img, gameBoard.getGold()[0], 150)
+
+
+def crop_shop(img, gameBoard):
+    return image_utils.crop_shapes(img, gameBoard.getShop(), 200)
+
+
+def crop_healthbar(img, gameBoard, direction):
+    if direction == 0:
+        names = image_utils.crop_shapes(img, gameBoard.getHealthBars1()[0], 150)
+        values = image_utils.crop_shapes(img, gameBoard.getHealthBars1()[1], 150)
+    else:
+        names = image_utils.crop_shapes(img, gameBoard.getHealthBars2()[0], 150)
+        values = image_utils.crop_shapes(img, gameBoard.getHealthBars2()[1], 150)
+    return names, values
+
+
+def crop_players(img, gameBoard):
+    return image_utils.crop_shapes(img, gameBoard.getPlayers(), 200)

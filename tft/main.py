@@ -8,13 +8,12 @@ def generate_file_name():
 
 
 def main():
-    screenshot = True
     debug = True
 
-    gameWindow = game.wait_for_game_to_begin(screenshot)
+    gameWindow = game.wait_for_game_to_begin()
     gameBoard = game.initialize_game_board(gameWindow)
 
-    players = game.retrieve_player_list(gameWindow, gameBoard) if not screenshot else []
+    players = game.retrieve_player_list(gameWindow, gameBoard, debug=debug)
 
     file_name = generate_file_name() if not debug else None
     gameTracker = tracker.Tracker(players, file_name=file_name)

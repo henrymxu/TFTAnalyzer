@@ -1,4 +1,4 @@
-from tft import board, utils, tracker, window, image_utils, parser
+from tft import board, utils, window, image_utils, parser
 
 DebugWindowName = "TFTAnalyzer Debug"
 WindowName = "League of Legends (TM) Client"
@@ -16,20 +16,15 @@ def debug_screen(img, game):
     image_utils.show_image(img, DebugWindowName)
 
 
-def wait_for_game_to_begin(screenshot=False):
+def wait_for_game_to_begin():
     """
     Waits for the game window to begin and returns the window object
 
     If screenshot mode is used, the screenshot image window is created here.
 
-    :param screenshot:
     :return:
     """
     gameWindow = window.GameWindow(WindowName)
-    if screenshot:
-        gameWindow = window.StaticImageWindow(DebugWindowName)
-        image = gameWindow.captureWindow()
-        image_utils.show_image(image, DebugWindowName)
     gameWindow.waitForWindowToExist()
     return gameWindow
 
@@ -45,20 +40,27 @@ def initialize_game_board(gameWindow):
     """
     size = gameWindow.getWindowSize()
     print("Window size: {}".format(size))
-    return board.GameBoard(size)
+    return board.gameBoard(size)
 
 
-def retrieve_player_list(gameWindow, gameBoard):
+def retrieve_player_list(gameWindow, gameBoard, debug=False):
     """
 
     :param gameWindow:
     :param gameBoard:
+    :param debug:
     :return:
     """
     players = []
-    while len(players) != 8:
-        image = gameWindow.captureWindow()
-        players = tracker.determine_players(image_utils.crop_shapes(image, gameBoard.getPlayers()))
+    while not players or len(players) != 8:
+        img = gameWindow.captureWindow()
+        players = parser.parse_players(board.crop_players(img, gameBoard))
+        if debug:
+            image_utils.draw_shapes(img, gameBoard.getPlayers())
+            image_utils.show_image(img, DebugWindowName)
+            import cv2
+            cv2.waitKey(250)
+    print("players: {}".format(players))
     return players
 
 
@@ -81,25 +83,23 @@ def track_game(gameWindow, gameBoard, gameTracker, debug=False):
         img = gameWindow.captureWindow()
 
         timer = utils.start_timer()
-        stage = parser.parse_stage(image_utils.crop_shape(img, gameBoard.getStage()[0], 200))
-        level = parser.parse_level(image_utils.crop_shape(img, gameBoard.getLevel()[0], 150))
-        gold = parser.parse_gold(image_utils.crop_shape(img, gameBoard.getGold()[0], 150))
-        shop = parser.parse_shop(image_utils.crop_shapes(img, gameBoard.getShop(), 200))
+        stage = parser.parse_stage(board.crop_stage(img, gameBoard))
+        level = parser.parse_level(board.crop_level(img, gameBoard))
+        gold = parser.parse_gold(board.crop_gold(img, gameBoard))
+        shop = parser.parse_shop(board.crop_shop(img, gameBoard))
         print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
         print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
         if gameTracker.hasStageChanged(stage):
-            top_to_bottom = (image_utils.crop_shapes(img, gameBoard.getHealthBars1()[0], 150),
-                             image_utils.crop_shapes(img, gameBoard.getHealthBars1()[1], 200))
-            bottom_to_top = (image_utils.crop_shapes(img, gameBoard.getHealthBars2()[0], 150),
-                             image_utils.crop_shapes(img, gameBoard.getHealthBars2()[1], 200))
+            top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
+            bottom_to_top = board.crop_healthbar(img, gameBoard, 1)
             timer = utils.start_timer()
-            healthbars = parser.parse_healthbars((top_to_bottom, bottom_to_top))
+            healthbars = parser.parse_healthbars(top_to_bottom, bottom_to_top)
             print("healthbars gathering exec time: {} seconds".format(utils.end_timer(timer)))
             print("healthbars {}".format(healthbars))
             gameTracker.addStage(stage, healthbars, level, gold)
 
-        gameTracker.addShopIfChanged(shop, level, gold)
+        gameTracker.addShopIfChanged(shop, stage, level, gold)
 
         if debug:
             debug_screen(img, gameBoard)

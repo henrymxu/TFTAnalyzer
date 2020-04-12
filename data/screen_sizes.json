@@ -31,12 +31,12 @@
         "height": 30
       },
       "players": {
-        "x": 0,
-        "y": 0,
-        "width": 0,
-        "height": 0,
-        "x_gap": 0,
-        "y_gap": 0
+        "x": 410,
+        "y": 486,
+        "width": 240,
+        "height": 20,
+        "x_gap": 48,
+        "y_gap": 521
       },
       "health_bar_names_top_to_bottom": {
         "x": 1660,
@@ -100,12 +100,12 @@
         "height": 30
       },
       "players": {
-        "x": 0,
-        "y": 0,
-        "width": 0,
-        "height": 0,
-        "x_gap": 0,
-        "y_gap": 0
+        "x": 544,
+        "y": 651,
+        "width": 322,
+        "height": 25,
+        "x_gap": 62,
+        "y_gap": 696
       },
       "health_bar_names_top_to_bottom": {
         "x": 2260,

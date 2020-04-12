@@ -51,12 +51,14 @@ class GameWindow:
         return self.findWindow() != 0
 
 
+
 class StaticImageWindow(GameWindow):
-    def __init__(self, name):
+    def __init__(self, name, file_name):
         super().__init__(name)
+        self._file_name = file_name
 
     def captureWindow(self):
-        image = cv2.imread("/Users/henry/Downloads/Screenshot_11.png")
+        image = cv2.imread(self._file_name)
         return image
 
     def waitForWindowToExist(self):

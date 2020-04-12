@@ -6,16 +6,12 @@ from tft import utils
 class Tracker:
     def __init__(self, players, file_name=None):
         self.__unitLookupTable = self._initializeUnitLookupTable()
-        self.__shops = []
-        self.__state = {}
+        self.__lastShop = {}
+        self.__stages = []
         self.__players = players
         if file_name:
             self.__file_name = file_name
             utils.create_json_array_file(self.__file_name)
-
-    def __writeToFile(self, data):
-        if self.__file_name:
-            utils.append_to_json_file(self.__file_name, self.__state)
 
     def _initializeUnitLookupTable(self):
         """
@@ -51,6 +47,13 @@ class Tracker:
         # print("Found Match: {} == {}, score = {}".format(unit, choice[0][0], choice[0][1]))
         return choice[0][0]
 
+    def getStages(self):
+        return self.__stages
+
+    def writeToFile(self):
+        if self.__file_name:
+            utils.append_to_json_array_file(self.__file_name, self.__stages)
+
     def hasShopChanged(self, units):
         """
         Determines whether or not the shop has changed.
@@ -67,9 +70,9 @@ class Tracker:
         for i in range(0, 5):
             if units[i] == "":
                 continue
-            if not self.__shops:
+            if not self.__lastShop:
                 return True
-            if not self.__shops[-1]["units"][i] == units[i]:
+            if not self.__lastShop["units"][i] == units[i]:
                 units_changed += 1
         return units_changed > 1
 
@@ -80,17 +83,14 @@ class Tracker:
         :param stage: string with format (x-y)
         :return: boolean
         """
-        if self.__state and self.__state["stage"] and self.__state["stage"] == stage:
+        if self.__stages and self.__stages[-1]["stage"] == stage:
             return False
         return True
 
     def addStage(self, stage, healthbars, level, gold):
-        if self.__state:
-            self.__writeToFile(self.__state)
-        self.__shops.clear()
-        self.__state = _create_state(stage, healthbars, level, gold, self.__shops)
+        self.__stages.append(_create_stage(stage, healthbars, level, gold))
 
-    def addShopIfChanged(self, units, level, gold):
+    def addShopIfChanged(self, units, stage, level, gold):
         """
         Add a shop to the tracker if has yet to be added, along with the current level and gold amount.
 
@@ -103,13 +103,18 @@ class Tracker:
         if not self.hasShopChanged(units):
             return False
         shop = _create_shop(units, level, gold)
-        self.__shops.append(shop)
+        self._addShopToStage(stage, shop)
+        self.__lastShop = shop
         return True
+
+    def _addShopToStage(self, stage, shop):
+        saved_stage = next(search for search in self.__stages if search["stage"] == stage)
+        saved_stage["shops"].append(shop)
 
 
 def _create_shop(units, level, gold):
     return {"units": units, "level": level, "gold": gold}
 
 
-def _create_state(stage, healthbars, level, gold, shops):
-    return {"stage": stage, "healthbars": healthbars, "level": level, "gold": gold, "shops": shops}
+def _create_stage(stage, healthbars, level, gold):
+    return {"stage": stage, "healthbars": healthbars, "level": level, "gold": gold, "shops": []}

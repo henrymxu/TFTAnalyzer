@@ -55,12 +55,16 @@ def create_json_array_file(file):
         json.dump([], f)
 
 
-def append_to_json_file(file, data):
+def append_to_json_array_file(file, data):
     with open(os.path.join(_ROOT, file), mode='r', encoding='utf-8') as feed:
         feeds = json.load(feed)
     with open(os.path.join(_ROOT, file), mode='w', encoding='utf-8') as feed:
         feeds.append(data)
         json.dump(feeds, feed)
+
+
+def delete_json_file(file):
+    os.remove(os.path.join(_ROOT, file))
 
 
 def exit_with_error(string):
