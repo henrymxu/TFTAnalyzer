@@ -1,7 +1,7 @@
 from tft import utils, image_utils
 
 
-class gameBoard:
+class Board:
     def __init__(self, size):
         self.__vertices = _generate_vertices(size)
 
@@ -119,6 +119,7 @@ def __create_rectangle(x_offset, y_offset, width, height):
     x = [x_offset, x_offset + width]
     vertices = [[x[0], y[0]], [x[1], y[0]], [x[1], y[1]], [x[0], y[1]]]
     return [vertices]
+
 
 def crop_stage(img, gameBoard):
     return image_utils.crop_shape(img, gameBoard.getStage()[0], 200)

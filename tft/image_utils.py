@@ -10,6 +10,10 @@ def show_image(img, window_name):
     cv2.waitKey(25)
 
 
+def close_window(window_name):
+    cv2.destroyWindow(window_name)
+
+
 def draw_shapes(img, vertices):
     for vertices in vertices:
         draw_shape(img, vertices)
@@ -41,4 +45,4 @@ def crop_shapes(img, vertices, scale_percent=100):
 
 
 def wait():
-    cv2.waitKey(500000)
+    cv2.waitKey(25)

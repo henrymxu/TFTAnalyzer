@@ -28,20 +28,24 @@ class Tracker:
             unit_lookup_table.append(unit[key])
         return unit_lookup_table
 
-    def _findUnitInLookupTable(self, unit):
+    def _findMatchingStringInList(self, string, list, score):
         """
-        Attempts to find unit in lookup table
+        Attempts to match a string to an element in a list
 
-        Uses Fuzzy string matching in order to find the correct unit.  If the best match has a score lower than
-        75, a blank string will be returned instead.
+        Uses Fuzzy string matching in order to find the correct string.  If the best match has a score lower than
+        than the score provided, a blank string will be returned instead.
 
-        :param unit: post processed string representing a unit
-        :return: string
+        :param string:
+        :param list:
+        :param score:
+        :return:
         """
-        if unit == "" or unit == "Be":  # Weird case where empty shop tile appears as "Be"
+        import fuzzywuzzy.utils
+        if string == "" or string == "Be":  # Weird case where empty shop tile appears as "Be"
             return ""
-        choice = process.extract(unit, self.__unitLookupTable, limit=1, scorer=fuzz.QRatio)
-        if choice[0][1] <= 75:
+        string = fuzzywuzzy.utils.full_process(string)
+        choice = process.extract(string, list, limit=1, scorer=fuzz.QRatio)
+        if not choice or choice[0][1] < score:
             # print("Not a Match: {} != {}, score = {}".format(unit, choice[0][0], choice[0][1]))
             return ""
         # print("Found Match: {} == {}, score = {}".format(unit, choice[0][0], choice[0][1]))
@@ -88,7 +92,14 @@ class Tracker:
         return True
 
     def addStage(self, stage, healthbars, level, gold):
-        self.__stages.append(_create_stage(stage, healthbars, level, gold))
+        if self.__players:
+            players = {}
+            for player, health in healthbars:
+                player = self._findMatchingStringInList(player, self.__players, 80)
+                players[player] = health
+        else:
+            players = dict(healthbars)
+        self.__stages.append(_create_stage(stage, players, level, gold))
 
     def addShopIfChanged(self, units, stage, level, gold):
         """
@@ -99,7 +110,7 @@ class Tracker:
         :param gold:
         :return: boolean
         """
-        units = [self._findUnitInLookupTable(i) for i in units]
+        units = [self._findMatchingStringInList(i, self.__unitLookupTable, 75) for i in units]
         if not self.hasShopChanged(units):
             return False
         shop = _create_shop(units, level, gold)
