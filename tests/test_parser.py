@@ -95,8 +95,7 @@ class TestParser(unittest.TestCase):
 
 def initialize_screenshot(file_name):
     gameWindow = window.StaticImageWindow(TestWindowName, file_name)
-    image = gameWindow.captureWindow()
-    image_utils.show_image(image, TestWindowName)
+    gameWindow.showWindow()
     gameBoard = game.initialize_game_board(gameWindow)
     return gameWindow, gameBoard
 

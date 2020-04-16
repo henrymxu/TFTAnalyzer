@@ -30,10 +30,11 @@ class Board:
 def _get_screen_size_data(size):
     data = utils.open_json_file("data/screen_sizes.json")
     user_resolution = size[1]
+    range = 0.1
     for resolution in data:
         value = int(resolution)
-        min_res = value * 0.98
-        max_res = value * 1.02
+        min_res = value * (1 - range)
+        max_res = value * (1 + range)
         if min_res < user_resolution < max_res:
             return data[resolution]["contents"]
     utils.exit_with_error("Unsupported screen size: {}".format(size[1]))

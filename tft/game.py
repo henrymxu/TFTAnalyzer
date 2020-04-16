@@ -59,6 +59,11 @@ def retrieve_player_list(gameWindow, gameBoard, gameParser, gameDebugger=None):
             image_utils.draw_shapes(img, gameBoard.getPlayers())
             gameDebugger.add_window(img, DebugWindowName, debugger.PlayerWindowOverlay)
             gameDebugger.show()
+    count = 8
+    while count == 8:
+        img = gameWindow.captureWindow()
+        count = len(gameParser.parse_players(board.crop_players(img, gameBoard)))
+        print("Waiting for Game to Begin (Still on Players Loading Screen)")
     print("players: {}".format(players))
     return players
 

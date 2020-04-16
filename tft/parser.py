@@ -35,7 +35,7 @@ class Parser:
 
         :param top_to_bottom:
         :param bottom_to_top:
-        :return:
+        :return: list of tuples containing (name, health)
         """
         healthbars = []
         for img in [top_to_bottom, bottom_to_top]:
@@ -50,15 +50,27 @@ class Parser:
 
     def parse_players(self, imgs):
         """
-        Determines the players in the game from the loading screen
+        Determines the players in the game from the loading screen.
+
+        If more than 1 player is unreadable (i.e OCR returns blank), then the entire list is cleared as it is
+        assumed to be not the player loading screen (black screen or past the player loading screen).
+
         :param imgs: cropped images of the loading screen
         :return: list of players
         """
         players = []
+        blank_count = 0 #TODO: Improve this logic, kinda unclear
         for img in imgs:
             possible_player = self._parse_image_for_text(img, '--psm 7', True, debugger.ParsePlayers)
-            player = possible_player if possible_player else "You"
+            if possible_player:
+                player = possible_player
+            else:
+                blank_count += 1
+                player = "You"
             players.append(player)
+        if blank_count > 1:
+            print("Invalid Players Screen")
+            players.clear()
         return players
 
     def _parse_image_for_text(self, img, config, pre_process, caller=""):
