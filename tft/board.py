@@ -134,7 +134,7 @@ def crop_stage_early(img, gameBoard):
 
 
 def crop_level(img, gameBoard):
-    return image_utils.crop_shape(img, gameBoard.getLevel()[0], 150)
+    return image_utils.crop_shape(img, gameBoard.getLevel()[0], 300)
 
 
 def crop_gold(img, gameBoard):

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pytesseract
 
-from tft import debugger
+from tft import debugger, utils
 
 
 class Parser:
@@ -11,7 +11,7 @@ class Parser:
 
     def parse_gold(self, img):
         config = '--psm 8 --oem 3 -c tessedit_char_whitelist=1234567890'
-        return self._parse_image_for_text(img, config, False, debugger.ParseGold)
+        return utils.convert_string_to_integer(self._parse_image_for_text(img, config, False, debugger.ParseGold))
 
     def parse_stage(self, img):
         config = '--psm 8 -c tessedit_char_whitelist=123456789-'
@@ -19,7 +19,7 @@ class Parser:
 
     def parse_level(self, img):
         config = '--psm 10 --oem 3 -c tessedit_char_whitelist=123456789'
-        return self._parse_image_for_text(img, config, False, debugger.ParseLevel)
+        return utils.convert_string_to_integer(self._parse_image_for_text(img, config, False, debugger.ParseLevel))
 
     def parse_shop(self, imgs):
         shop = []
@@ -43,9 +43,10 @@ class Parser:
                 name_config = '--psm 7 --oem 3'
                 health_config = '--psm 7 -c tessedit_char_whitelist=1234567890'
                 name = self._parse_image_for_text(img[0][player], name_config, True, debugger.ParseHealthbars)
-                health = self._parse_image_for_text(img[1][player], health_config, True, debugger.ParseHealthbars)
-                if health.isnumeric():
-                    healthbars.append((name, health))
+                health = utils.convert_string_to_integer(
+                    self._parse_image_for_text(img[1][player], health_config, True, debugger.ParseHealthbars))
+                if health != -1:
+                    healthbars.append((name, int(health)))
         return healthbars
 
     def parse_players(self, imgs):
@@ -59,7 +60,7 @@ class Parser:
         :return: list of players
         """
         players = []
-        blank_count = 0 #TODO: Improve this logic, kinda unclear
+        blank_count = 0  # TODO: Improve this logic, kinda unclear
         for img in imgs:
             possible_player = self._parse_image_for_text(img, '--psm 7', True, debugger.ParsePlayers)
             if possible_player:

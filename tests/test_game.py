@@ -4,7 +4,6 @@ import unittest
 from tests import initialize_screenshot
 from tft import game, debugger, parser, tracker, window
 
-TestWindowName = "TFTAnalyzer Test Window"
 Test1080PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_10.png"
 Test1440PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_15.png"
 
@@ -22,7 +21,7 @@ class MyTestCase(unittest.TestCase):
         gameDebugger.enable_window_overlay()
         gameDebugger.enable_parse_shop()
         gameParser = parser.Parser(gameDebugger)
-        gameWindow, gameBoard = initialize_screenshot(TestWindowName, Test1080PDefaultScreenshot)
+        gameWindow, gameBoard = initialize_screenshot(Test1080PDefaultScreenshot)
         gameTracker = tracker.Tracker([], file_name=None)
 
         img = gameWindow.captureWindow()
@@ -35,7 +34,7 @@ class MyTestCase(unittest.TestCase):
         gameDebugger.enable_window_overlay()
         gameDebugger.enable_parse_shop()
         gameParser = parser.Parser(gameDebugger)
-        gameWindow, gameBoard = initialize_screenshot(TestWindowName, Test1440PDefaultScreenshot)
+        gameWindow, gameBoard = initialize_screenshot(Test1440PDefaultScreenshot)
         gameTracker = tracker.Tracker([], file_name=None)
 
         img = gameWindow.captureWindow()
@@ -50,7 +49,7 @@ class MyTestCase(unittest.TestCase):
         gameDebugger.enable_parse_gold()
 
         gameParser = parser.Parser(gameDebugger)
-        gameWindow = window.PreRecordedGameplayWindow(TestWindowName, Test1440PDefaultRecording)
+        gameWindow = window.PreRecordedGameplayWindow(Test1440PDefaultRecording)
         gameWindow.showWindow()
         gameBoard = game.initialize_game_board(gameWindow)
         players = game.retrieve_player_list(gameWindow, gameBoard, gameParser, gameDebugger)

@@ -5,6 +5,7 @@ import sys
 import time
 import cv2
 import pyautogui
+from fuzzywuzzy import process, fuzz
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
@@ -81,11 +82,39 @@ def retain_only_digits(string):
     return re.sub("\D", "", string)
 
 
-def assert_stage_regex(stage):
+def assert_stage_string_format(stage):
     """
 
     :param stage:
-    :return:
+    :return: boolean
     """
     results = re.search("[1-9]-[1-9]", stage)
     return results is not None
+
+
+def find_matching_string_in_list(string, lookup_list, score=75):
+    """
+    Attempts to match a string to an element in a list
+
+    Uses Fuzzy string matching in order to find the correct string.  If the best match has a score lower than
+    than the score provided, a blank string will be returned instead.
+
+    :param string:
+    :param lookup_list:
+    :param score:
+    :return:
+    """
+    import fuzzywuzzy.utils
+    if string == "" or string == "Be":  # Weird case where empty shop tile appears as "Be"
+        return ""
+    string = fuzzywuzzy.utils.full_process(string)
+    choice = process.extract(string, lookup_list, limit=1, scorer=fuzz.QRatio)
+    if not choice or choice[0][1] < score:
+        # print("Not a Match: {} != {}, score = {}".format(unit, choice[0][0], choice[0][1]))
+        return ""
+    # print("Found Match: {} == {}, score = {}".format(unit, choice[0][0], choice[0][1]))
+    return choice[0][0]
+
+
+def convert_string_to_integer(string):
+    return int(string) if string.isdigit() else -1

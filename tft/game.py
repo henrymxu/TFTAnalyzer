@@ -1,4 +1,4 @@
-from tft import board, utils, window, image_utils, parser, debugger
+from tft import board, utils, window, image_utils, debugger
 
 DebugWindowName = "TFTAnalyzer Debug"
 WindowName = "League of Legends (TM) Client"
@@ -91,7 +91,7 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
     print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
     print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
-    if not utils.assert_stage_regex(stage):
+    if not utils.assert_stage_string_format(stage):
         print("Falling back to early stage parsing (stage 1)")
         stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
 
