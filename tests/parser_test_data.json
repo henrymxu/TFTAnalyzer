@@ -1,0 +1,34 @@
+{
+  "players": {
+    "1080P": [
+      {
+        "file_name": "players_1080P_1.png",
+        "players": []
+      }
+    ],
+    "2560P": [
+      {
+        "file_name": "players_2560P_1.png",
+        "players": []
+      },
+      {
+        "file_name": "players_2560P_2.png",
+        "players": []
+      }
+    ]
+  },
+  "board": {
+    "1080P": [
+      {
+        "file_name": "board_1080P_1.png",
+        "players": []
+      }
+    ],
+    "2560P": [
+      {
+        "file_name": "board_2560P_1.png",
+        "players": []
+      }
+    ]
+  }
+}

@@ -15,7 +15,7 @@ def draw_debug_shapes(img, game):
     image_utils.draw_shapes(img, game.getHealthBars2()[1])
 
 
-def wait_for_game_to_begin():
+def wait_for_window_to_appear():
     """
     Waits for the game window to begin and returns the window object
 
@@ -59,13 +59,16 @@ def retrieve_player_list(gameWindow, gameBoard, gameParser, gameDebugger=None):
             image_utils.draw_shapes(img, gameBoard.getPlayers())
             gameDebugger.add_window(img, DebugWindowName, debugger.PlayerWindowOverlay)
             gameDebugger.show()
+    print("players: {}".format(players))
+    return players
+
+
+def wait_for_loading_screen_to_complete(gameWindow, gameBoard, gameParser):
     count = 8
     while count == 8:
         img = gameWindow.captureWindow()
         count = len(gameParser.parse_players(board.crop_players(img, gameBoard)))
         print("Waiting for Game to Begin (Still on Players Loading Screen)")
-    print("players: {}".format(players))
-    return players
 
 
 def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):

@@ -1,6 +1,6 @@
 import unittest
 
-from tft import window, image_utils, game, parser, board
+from tft import window, game, parser, board, debugger
 
 TestWindowName = "TFTAnalyzer Test Window"
 Test1080PDefault = "/Users/henry/Downloads/TFT Screenshots/Screenshot_10.png"
@@ -10,17 +10,19 @@ Test1440PDefault = "/Users/henry/Downloads/TFT Screenshots/Screenshot_11.png"
 class TestParser(unittest.TestCase):
 
     def setUp(self):
-        self.subject = parser.Parser(None)
+        self.debug = debugger.Debugger()
+        self.debug.enable_parse_players()
+        self.subject = parser.Parser(self.debug)
 
     def test_players_1080p(self):
-        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/Screenshot_12.png")
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/players_1080P_1.png")
         players = game.retrieve_player_list(gameWindow, gameBoard, self.subject)
         self.assertEqual(len(players), 8)
         for player in players:
             self.assertNotEqual("", player)
 
     def test_players_1440p(self):
-        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/Screenshot_13.png")
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/players_2560P_1.png")
         players = game.retrieve_player_list(gameWindow, gameBoard, self.subject)
         self.assertEqual(len(players), 8)
         for player in players:

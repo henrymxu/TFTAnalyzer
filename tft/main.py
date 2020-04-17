@@ -11,10 +11,11 @@ def main():
     gameDebugger = debugger.Debugger()
     gameParser = parser.Parser(gameDebugger)
 
-    gameWindow = game.wait_for_game_to_begin()
+    gameWindow = game.wait_for_window_to_appear()
     gameBoard = game.initialize_game_board(gameWindow)
 
     players = game.retrieve_player_list(gameWindow, gameBoard, gameParser, gameDebugger)
+    game.wait_for_loading_screen_to_complete(gameWindow, gameBoard, gameParser)
 
     file_name = generate_file_name() if not gameDebugger else None
     gameTracker = tracker.Tracker(players, file_name=file_name)
