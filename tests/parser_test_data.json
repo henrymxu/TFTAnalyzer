@@ -6,13 +6,13 @@
         "players": []
       }
     ],
-    "2560P": [
+    "1440P": [
       {
-        "file_name": "players_2560P_1.png",
+        "file_name": "players_1440P_1.png",
         "players": []
       },
       {
-        "file_name": "players_2560P_2.png",
+        "file_name": "players_1440P_2.png",
         "players": []
       }
     ]
@@ -24,9 +24,9 @@
         "players": []
       }
     ],
-    "2560P": [
+    "1440P": [
       {
-        "file_name": "board_2560P_1.png",
+        "file_name": "board_1440P_1.png",
         "players": []
       }
     ]

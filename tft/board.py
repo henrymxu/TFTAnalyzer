@@ -17,6 +17,9 @@ class Board:
     def getStage(self):
         return self.__vertices["stage"]
 
+    def getStageEarly(self):
+        return self.__vertices["stage_early"]
+
     def getPlayers(self):
         return self.__vertices["players"]
 
@@ -46,6 +49,7 @@ def _generate_vertices(size):
                 "shop": __create_row_of_rectangles_from_data(size_data["shop"], 5),
                 "level": __create_rectangle_from_data(size_data["level"]),
                 "stage": __create_rectangle_from_data(size_data["stage"]),
+                "stage_early": __create_rectangle_from_data(size_data["stage_early"]),
                 "health_bar_names_1": __create_column_of_rectangles_from_data(
                     size_data["health_bar_names_top_to_bottom"], 8),
                 "health_bar_values_1": __create_column_of_rectangles_from_data(
@@ -124,6 +128,9 @@ def __create_rectangle(x_offset, y_offset, width, height):
 
 def crop_stage(img, gameBoard):
     return image_utils.crop_shape(img, gameBoard.getStage()[0], 200)
+
+def crop_stage_early(img, gameBoard):
+    return image_utils.crop_shape(img, gameBoard.getStageEarly()[0], 200)
 
 
 def crop_level(img, gameBoard):

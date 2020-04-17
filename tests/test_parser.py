@@ -22,7 +22,7 @@ class TestParser(unittest.TestCase):
             self.assertNotEqual("", player)
 
     def test_players_1440p(self):
-        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/players_2560P_1.png")
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/players_1440P_1.png")
         players = game.retrieve_player_list(gameWindow, gameBoard, self.subject)
         self.assertEqual(len(players), 8)
         for player in players:
@@ -64,11 +64,23 @@ class TestParser(unittest.TestCase):
         stage = self.subject.parse_stage(board.crop_stage(img, gameBoard))
         self.assertEqual(stage, "4-5")
 
+    def test_stage_early_1080p(self):
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/board_1080P_1.png")
+        img = gameWindow.captureWindow()
+        stage = self.subject.parse_stage(board.crop_stage_early(img, gameBoard))
+        self.assertEqual(stage, "1-3")
+
     def test_stage_1440p(self):
         gameWindow, gameBoard = initialize_screenshot(Test1440PDefault)
         img = gameWindow.captureWindow()
         stage = self.subject.parse_stage(board.crop_stage(img, gameBoard))
         self.assertEqual(stage, "5-5")
+
+    def test_stage_early_1440p(self):
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/board_1440P_1.png")
+        img = gameWindow.captureWindow()
+        stage = self.subject.parse_stage(board.crop_stage_early(img, gameBoard))
+        self.assertEqual(stage, "1-2")
 
     def test_shop_1080p(self):
         gameWindow, gameBoard = initialize_screenshot(Test1080PDefault)

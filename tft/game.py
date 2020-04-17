@@ -91,6 +91,10 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
     print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
     print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
+    if not utils.assert_stage_regex(stage):
+        print("Falling back to early stage parsing (stage 1)")
+        stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
+
     if gameTracker.hasStageChanged(stage):
         top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
         bottom_to_top = board.crop_healthbar(img, gameBoard, 1)

@@ -79,3 +79,13 @@ def generate_random_window_title():
 
 def retain_only_digits(string):
     return re.sub("\D", "", string)
+
+
+def assert_stage_regex(stage):
+    """
+
+    :param stage:
+    :return:
+    """
+    results = re.search("[1-9]-[1-9]", stage)
+    return results is not None

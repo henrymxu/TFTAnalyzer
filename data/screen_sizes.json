@@ -11,6 +11,12 @@
         "width": 35,
         "height": 25
       },
+      "stage_early": {
+        "x": 830,
+        "y": 10,
+        "width": 35,
+        "height": 25
+      },
       "level": {
         "x": 315,
         "y": 880,
@@ -68,7 +74,7 @@
       }
     }
   },
-  "1421": {
+  "1440": {
     "size": [
       2560,
       1440
@@ -76,6 +82,12 @@
     "contents": {
       "stage": {
         "x": 1035,
+        "y": 15,
+        "width": 50,
+        "height": 30
+      },
+      "stage_early": {
+        "x": 1110,
         "y": 15,
         "width": 50,
         "height": 30
