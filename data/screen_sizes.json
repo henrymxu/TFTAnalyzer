@@ -38,11 +38,11 @@
       },
       "players": {
         "x": 410,
-        "y": 486,
+        "y": 482,
         "width": 240,
-        "height": 20,
+        "height": 24,
         "x_gap": 48,
-        "y_gap": 521
+        "y_gap": 516
       },
       "health_bar_names_top_to_bottom": {
         "x": 1660,

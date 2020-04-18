@@ -18,6 +18,16 @@ class Debugger:
         self.__hide_queue = Queue()
         self.__debuggable_functions = {}
 
+    def enable_all(self):
+        self.enable_window_overlay()
+        self.enable_player_window_overlay()
+        self.enable_parse_gold()
+        self.enable_parse_stage()
+        self.enable_parse_level()
+        self.enable_parse_shop()
+        self.enable_parse_healthbars()
+        self.enable_parse_players()
+
     def enable_window_overlay(self):
         self.__debuggable_functions[WindowOverly] = True
 
@@ -43,12 +53,26 @@ class Debugger:
         self.__debuggable_functions[ParsePlayers] = True
 
     def add_window(self, img, window_name, function):
+        """
+        Add a window to be shown by the debugger.
+
+        :param img:
+        :param window_name:
+        :param function:
+        :return:
+        """
         if function in self.__debuggable_functions:
             size = len(img)
             tiebreaker = self.__display_queue.qsize()
             self.__display_queue.put((-size, tiebreaker, (img, window_name)))
 
     def show(self):
+        """
+        Show all windows in the queue after closing the previously shown ones.
+
+        Windows are shown with larger windows behind smaller windows.
+        :return:
+        """
         while True:
             if self.__hide_queue.empty():
                 break

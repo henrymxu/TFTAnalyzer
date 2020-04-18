@@ -17,7 +17,7 @@ class TestParser(unittest.TestCase):
         self.unit_lookup = tracker.initialize_unit_lookup_table()
 
     def test_players(self):
-        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/players_1080_1.png")
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/players_1080_2.png")
         players = game.retrieve_player_list(gameWindow, gameBoard, self.subject)
         self.assertEqual(len(players), 8)
         for player in players:
@@ -108,7 +108,7 @@ def run_complete_parser_test(testcase, img, data, gameBoard):
                 if player == "You":
                     continue
                 res = utils.find_matching_string_in_list(player, data["players"])
-                testcase.assertIsNot(res, "")
+                testcase.assertIsNot(res, "", "Unable to find match for {}".format(player))
         elif isinstance(data["players"], dict):
             top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
             bottom_to_top = board.crop_healthbar(img, gameBoard, 1)

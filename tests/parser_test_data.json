@@ -3,17 +3,57 @@
     "1080": [
       {
         "file_name": "players_1080_1.png",
-        "players": ["Sleepy Bean", "BokuNoLeo", "YeaHey", "EngSci Dropout", "KarpsDestiny", "peachthesnake", "Gink Freecs", "DogtorKy420"]
+        "players": [
+          "Sleepy Bean",
+          "BokuNoLeo",
+          "YeaHey",
+          "EngSci Dropout",
+          "KarpsDestiny",
+          "peachthesnake",
+          "Gink Freecs",
+          "DogtorKy420"
+        ]
+      },
+      {
+        "file_name": "players_1080_2.png",
+        "players": [
+          "NPP Hard",
+          "ChlngWa",
+          "EngSci Dropout",
+          "bradthedumbling",
+          "CrispyDoperson",
+          "Quan Pham",
+          "throwupnow",
+          "lolojai111"
+        ]
       }
     ],
     "1440": [
       {
         "file_name": "players_1440_1.png",
-        "players": ["Ravenwood", "DrGruber37", "Feochadan", "Succi Bites", "YeaHey", "EngSci Dropout", "peachthesnake", "Tryyot"]
+        "players": [
+          "Ravenwood",
+          "DrGruber37",
+          "Feochadan",
+          "Succi Bites",
+          "YeaHey",
+          "EngSci Dropout",
+          "peachthesnake",
+          "Tryyot"
+        ]
       },
       {
         "file_name": "players_1440_2.png",
-        "players": ["Cu Cai PVE", "NPP Hard", "BokuNoLeo", "YeaHey", "Chlngwa", "EngSci Dropout", "peachthesnake", "thienhandsome"]
+        "players": [
+          "Cu Cai PVE",
+          "NPP Hard",
+          "BokuNoLeo",
+          "YeaHey",
+          "ChlngWa",
+          "EngSci Dropout",
+          "peachthesnake",
+          "thienhandsome"
+        ]
       }
     ]
   },
@@ -21,16 +61,44 @@
     "1080": [
       {
         "file_name": "board_1080_1.png",
-        "players": {"Cu Cai PVE": 125, "NPP Hard": 125, "BokuNoLeo": 125, "YeaHey": 125, "ChlngWa": 125, "peachthesnake": 125, "thienhandsome": 125},
-        "shop": ["Jarvan IV", "Kha'Zix", "Kha'Zix", "Poppy", "Fiora"],
+        "players": {
+          "Cu Cai PVE": 125,
+          "NPP Hard": 125,
+          "BokuNoLeo": 125,
+          "YeaHey": 125,
+          "ChlngWa": 125,
+          "peachthesnake": 125,
+          "thienhandsome": 125
+        },
+        "shop": [
+          "Jarvan IV",
+          "Kha'Zix",
+          "Kha'Zix",
+          "Poppy",
+          "Fiora"
+        ],
         "level": 2,
         "gold": 2,
         "stage": "1-3"
       },
       {
         "file_name": "board_1080_2.png",
-        "players": {"WafWafWaffle": 93, "Riftx": 69, "Ajido": 65, "ajmonsta": 64, "Cris": 32, "IMSparrow": 24, "Gee Lii TypeMay": 24},
-        "shop": ["Blitzcrank", "Graves", "Ziggs", "Zoe", "Vi"],
+        "players": {
+          "WafWafWaffle": 93,
+          "Riftx": 69,
+          "Ajido": 65,
+          "ajmonsta": 64,
+          "Cris": 32,
+          "IMSparrow": 24,
+          "Gee Lii TypeMay": 24
+        },
+        "shop": [
+          "Blitzcrank",
+          "Graves",
+          "Ziggs",
+          "Zoe",
+          "Vi"
+        ],
         "level": 6,
         "gold": 50,
         "stage": "4-5"
@@ -43,8 +111,22 @@
       },
       {
         "file_name": "board_1440_2.png",
-        "players": {"LaughingWalrus": 82, "OutcastPanda": 62, "TFT Clover": 25, "Empty bluesoul": 23, "kmillz": 5, "Hoe Chii Minh": 3, "Rok Solid": 0},
-        "shop": ["Rakan", "", "Yasuo", "Vel'Koz", "Sona"],
+        "players": {
+          "LaughingWalrus": 82,
+          "OutcastPanda": 62,
+          "TFT Clover": 25,
+          "Empty bluesoul": 23,
+          "kmillz": 5,
+          "Hoe Chii Minh": 3,
+          "Rok Solid": 0
+        },
+        "shop": [
+          "Rakan",
+          "",
+          "Yasuo",
+          "Vel'Koz",
+          "Sona"
+        ],
         "level": 8,
         "gold": 20,
         "stage": "5-5"

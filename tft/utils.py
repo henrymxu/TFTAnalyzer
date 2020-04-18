@@ -92,7 +92,7 @@ def assert_stage_string_format(stage):
     return results is not None
 
 
-def find_matching_string_in_list(string, lookup_list, score=75):
+def find_matching_string_in_list(string, lookup_list, score=70):
     """
     Attempts to match a string to an element in a list
 
@@ -110,9 +110,9 @@ def find_matching_string_in_list(string, lookup_list, score=75):
     string = fuzzywuzzy.utils.full_process(string)
     choice = process.extract(string, lookup_list, limit=1, scorer=fuzz.QRatio)
     if not choice or choice[0][1] < score:
-        # print("Not a Match: {} != {}, score = {}".format(unit, choice[0][0], choice[0][1]))
+        print("Not a Match: {} != {}, score = {}".format(string, choice[0][0], choice[0][1]))
         return ""
-    # print("Found Match: {} == {}, score = {}".format(unit, choice[0][0], choice[0][1]))
+    # print("Found Match: {} == {}, score = {}".format(string, choice[0][0], choice[0][1]))
     return choice[0][0]
 
 
