@@ -12,7 +12,6 @@ class TestParser(unittest.TestCase):
 
     def setUp(self):
         self.debug = debugger.Debugger()
-        self.debug.enable_parse_players()
         self.subject = parser.Parser(self.debug)
         self.unit_lookup = tracker.initialize_unit_lookup_table()
 

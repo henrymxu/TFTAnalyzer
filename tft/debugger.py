@@ -17,6 +17,10 @@ class Debugger:
         self.__display_queue = PriorityQueue()
         self.__hide_queue = Queue()
         self.__debuggable_functions = {}
+        self.__wait = 25
+
+    def validation_mode(self):
+        self.__wait = 0
 
     def enable_all(self):
         self.enable_window_overlay()
@@ -87,7 +91,7 @@ class Debugger:
             window_name = res[1]
             if img is None or window_name is None:
                 break
-            image_utils.show_image(img, window_name)
+            image_utils.show_image(img, window_name, wait=self.__wait)
             self.__display_queue.task_done()
             self.__hide_queue.put(window_name)
 
