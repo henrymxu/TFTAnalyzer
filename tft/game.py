@@ -85,15 +85,17 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
     """
     timer = utils.start_timer()
     stage = gameParser.parse_stage(board.crop_stage(img, gameBoard))
+    if not utils.assert_stage_string_format(stage):
+        print("Falling back to early stage parsing (stage 1)")
+        stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
+    parsed_stage = utils.parse_stage_round(stage)
+    if parsed_stage[0] != 1 and parsed_stage[1] == 4:
+        print("carousal round")  # TODO: Can ignore other parsing during carousal round
     level = gameParser.parse_level(board.crop_level(img, gameBoard))
     gold = gameParser.parse_gold(board.crop_gold(img, gameBoard))
     shop = gameParser.parse_shop(board.crop_shop(img, gameBoard))
     print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
     print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
-
-    if not utils.assert_stage_string_format(stage):
-        print("Falling back to early stage parsing (stage 1)")
-        stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
 
     if gameTracker.hasStageChanged(stage):
         top_to_bottom = board.crop_healthbar(img, gameBoard, 0)

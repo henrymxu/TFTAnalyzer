@@ -92,6 +92,12 @@ def assert_stage_string_format(stage):
     return results is not None
 
 
+def parse_stage_round(stage):
+    if not assert_stage_string_format(stage):
+        return 0, 0
+    return convert_string_to_integer(stage[0]), convert_string_to_integer(stage[2])
+
+
 def find_matching_string_in_list(string, lookup_list, score=70):
     """
     Attempts to match a string to an element in a list
