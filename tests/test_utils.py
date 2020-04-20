@@ -19,8 +19,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.parse_stage_round("1-G"), (0, 0))
 
     def test_convert_string_to_integer(self):
-        self.assertEqual("8", 8)
-        self.assertTrue("asdf", -1)
+        self.assertEqual(utils.convert_string_to_integer("8"), 8)
+        self.assertEqual(utils.convert_string_to_integer("asdf"), -1)
+        self.assertEqual(utils.convert_string_to_integer("0"), 0)
 
 
 if __name__ == '__main__':

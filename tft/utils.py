@@ -98,6 +98,11 @@ def parse_stage_round(stage):
     return convert_string_to_integer(stage[0]), convert_string_to_integer(stage[2])
 
 
+def is_carousal_round(stage):
+    parsed_stage = parse_stage_round(stage)
+    return parsed_stage[0] != 1 and parsed_stage[1] == 4 or parsed_stage[0] == 1 and parsed_stage[1] == 1
+
+
 def find_matching_string_in_list(string, lookup_list, score=70):
     """
     Attempts to match a string to an element in a list

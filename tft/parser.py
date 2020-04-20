@@ -56,6 +56,8 @@ class Parser:
         If more than 1 player is unreadable (i.e OCR returns blank), then the entire list is cleared as it is
         assumed to be not the player loading screen (black screen or past the player loading screen).
 
+        TODO: Change return value to set
+
         :param imgs: cropped images of the loading screen
         :return: list of players
         """

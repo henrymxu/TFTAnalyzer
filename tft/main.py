@@ -28,6 +28,6 @@ def main():
         game.parse_state(img, gameBoard, gameTracker, gameParser)
 
     gameTracker.writeToFile()
-
+    # TODO: Implement cleaner and analyzer for file
 
 main()

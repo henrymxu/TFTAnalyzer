@@ -73,9 +73,10 @@ def wait_for_loading_screen_to_complete(gameWindow, gameBoard, gameParser):
 
 def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
     """
-    Polls the game state and retrieves various information
+    The function will parse various information from the screenshot provided and register the data to the Tracker.
 
-    The function will capture a screenshot of the game and attempt to determine various sets of information.
+    The stage will always be parsed synchronously, as it will determine whether or not the parsing of player health
+    is required.  TODO: parse other information in the background.
 
     :param img:
     :param gameBoard:
@@ -83,26 +84,18 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
     :param gameDebugger:
     :return:
     """
-    timer = utils.start_timer()
     stage = gameParser.parse_stage(board.crop_stage(img, gameBoard))
     if not utils.assert_stage_string_format(stage):
-        print("Falling back to early stage parsing (stage 1)")
         stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
-    parsed_stage = utils.parse_stage_round(stage)
-    if parsed_stage[0] != 1 and parsed_stage[1] == 4 or parsed_stage[0] == 1 and parsed_stage[1] == 1:
+    if utils.is_carousal_round(stage):
         print("carousal round")  # TODO: Can ignore other parsing during carousal round
     level = gameParser.parse_level(board.crop_level(img, gameBoard))
     gold = gameParser.parse_gold(board.crop_gold(img, gameBoard))
     shop = gameParser.parse_shop(board.crop_shop(img, gameBoard))
-    print("default info gathering exec time: {} seconds".format(utils.end_timer(timer)))
     print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
     if gameTracker.hasStageChanged(stage):
-        top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
-        bottom_to_top = board.crop_healthbar(img, gameBoard, 1)
-        timer = utils.start_timer()
-        healthbars = gameParser.parse_healthbars(top_to_bottom, bottom_to_top)
-        print("healthbars gathering exec time: {} seconds".format(utils.end_timer(timer)))
+        healthbars = _parse_healthbars(img, gameBoard, gameParser)
         print("healthbars {}".format(healthbars))
         gameTracker.addStage(stage, healthbars, level, gold)
 
@@ -112,3 +105,9 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
         draw_debug_shapes(img, gameBoard)
         gameDebugger.add_window(img, DebugWindowName, debugger.WindowOverly)
         gameDebugger.show()
+
+
+def _parse_healthbars(img, gameBoard, gameParser):
+    top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
+    bottom_to_top = board.crop_healthbar(img, gameBoard, 1)
+    return gameParser.parse_healthbars(top_to_bottom, bottom_to_top)

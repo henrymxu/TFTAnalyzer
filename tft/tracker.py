@@ -66,6 +66,7 @@ class Tracker:
         Add a shop to the tracker if has yet to be added, along with the current level and gold amount.
 
         :param units: list of un-processed units
+        :param stage:
         :param level:
         :param gold:
         :return: boolean
