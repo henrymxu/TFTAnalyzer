@@ -91,7 +91,7 @@ class Debugger:
             window_name = res[1]
             if img is None or window_name is None:
                 break
-            image_utils.show_image(img, window_name, wait=self.__wait)
+            image_utils.show_image(img, window_name, wait_key_delay=self.__wait)
             self.__display_queue.task_done()
             self.__hide_queue.put(window_name)
 
