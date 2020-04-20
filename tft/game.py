@@ -89,7 +89,7 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
         print("Falling back to early stage parsing (stage 1)")
         stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
     parsed_stage = utils.parse_stage_round(stage)
-    if parsed_stage[0] != 1 and parsed_stage[1] == 4:
+    if parsed_stage[0] != 1 and parsed_stage[1] == 4 or parsed_stage[0] == 1 and parsed_stage[1] == 1:
         print("carousal round")  # TODO: Can ignore other parsing during carousal round
     level = gameParser.parse_level(board.crop_level(img, gameBoard))
     gold = gameParser.parse_gold(board.crop_gold(img, gameBoard))

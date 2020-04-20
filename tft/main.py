@@ -1,4 +1,4 @@
-from tft import tracker, game, debugger, parser
+from tft import tracker, game, parser
 
 
 def generate_file_name():
@@ -8,16 +8,15 @@ def generate_file_name():
 
 
 def main():
-    gameDebugger = debugger.Debugger()
-    gameParser = parser.Parser(gameDebugger)
+    gameParser = parser.Parser()
 
     gameWindow = game.wait_for_window_to_appear()
     gameBoard = game.initialize_game_board(gameWindow)
 
-    players = game.retrieve_player_list(gameWindow, gameBoard, gameParser, gameDebugger)
+    players = game.retrieve_player_list(gameWindow, gameBoard, gameParser)
     game.wait_for_loading_screen_to_complete(gameWindow, gameBoard, gameParser)
 
-    file_name = generate_file_name() if not gameDebugger else None
+    file_name = generate_file_name()
     gameTracker = tracker.Tracker(players, file_name=file_name)
 
     while True:
@@ -26,7 +25,7 @@ def main():
             break
         img = gameWindow.captureWindow()
 
-        game.parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger)
+        game.parse_state(img, gameBoard, gameTracker, gameParser)
 
     gameTracker.writeToFile()
 

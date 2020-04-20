@@ -26,6 +26,19 @@
           "throwupnow",
           "lolojai111"
         ]
+      },
+      {
+        "file_name": "players_1080_3.png",
+        "players": [
+          "Dmalo",
+          "Tercesfotros",
+          "ThichLiemLon",
+          "anhkiu",
+          "riftxwintradeacc",
+          "akihohl",
+          "Qiyanu Rheeves",
+          "trananhs"
+        ]
       }
     ],
     "1440": [
@@ -102,6 +115,50 @@
         "level": 6,
         "gold": 50,
         "stage": "4-5"
+      },
+      {
+        "file_name": "board_1080_3.png",
+        "players": {
+          "avertion": 100,
+          "NPP Hard": 90,
+          "ChlngWa": 84,
+          "bradthedumbling": 84,
+          "Excited Peanut": 84,
+          "ToxicSushiBoi": 82,
+          "233339948": 74
+        },
+        "shop": [
+          "Annie",
+          "Graves",
+          "Rakan",
+          "Ziggs",
+          "Caitlyn"
+        ],
+        "level": 5,
+        "gold": 35,
+        "stage": "3-1"
+      },
+      {
+        "file_name": "board_1080_4.png",
+        "players": {
+          "avertion": 93,
+          "NPP Hard": 83,
+          "ChlngWa": 76,
+          "ToxicSushiBoi": 66,
+          "bradthedumbling": 63,
+          "Excited Peanut": 54,
+          "233339948": 31
+        },
+        "shop": [
+          "Blitzcrank",
+          "Zoe",
+          "Malphite",
+          "Mordekaiser",
+          "Xin Zhao"
+        ],
+        "level": 6,
+        "gold": 60,
+        "stage": "3-6"
       }
     ],
     "1440": [

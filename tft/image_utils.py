@@ -3,11 +3,11 @@ import cv2
 from tft import utils
 
 
-def show_image(img, window_name, wait=25):
+def show_image(img, window_name, wait_key_delay=25):
     cv2.namedWindow(window_name)
     cv2.setMouseCallback(window_name, utils.onMouseClick)
-    cv2.imshow(window_name, cv2.cvtColor(img, cv2.COLOR_RGB2RGBA))
-    cv2.waitKey(wait)
+    cv2.imshow(window_name, img)
+    cv2.waitKey(wait_key_delay)
 
 
 def close_window(window_name):
