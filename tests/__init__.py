@@ -9,6 +9,7 @@ def initialize_screenshot(file_name, window_name=TestWindowName):
     gameBoard = game.initialize_game_board(gameWindow)
     return gameWindow, gameBoard
 
+
 def initialize_video(file_name, window_name=TestWindowName):
     gameWindow = window.PreRecordedGameplayWindow(window_name, file_name)
     gameWindow.showWindow()

@@ -2,7 +2,7 @@ import time
 import unittest
 
 from tests import initialize_screenshot, initialize_video
-from tft import game, debugger, tracker, main
+from tft import game, tracker, main
 
 Test1080PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_10.png"
 Test1440PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_15.png"

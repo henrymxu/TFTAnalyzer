@@ -129,6 +129,7 @@ def __create_rectangle(x_offset, y_offset, width, height):
 def crop_stage(img, gameBoard):
     return image_utils.crop_shape(img, gameBoard.getStage()[0], 200)
 
+
 def crop_stage_early(img, gameBoard):
     return image_utils.crop_shape(img, gameBoard.getStageEarly()[0], 200)
 
