@@ -1,4 +1,4 @@
-from tft import tracker, game, parser
+from tft import tracker, game
 
 
 def generate_file_name():
@@ -7,13 +7,11 @@ def generate_file_name():
     return "test/{}.json".format(str(int(ts)))
 
 
-def main():
-    gameParser = parser.Parser()
-    gameWindow = game.wait_for_window_to_appear()
+def main(gameWindow):
     gameBoard = game.initialize_game_board(gameWindow)
 
-    players = game.retrieve_player_list(gameWindow, gameBoard, gameParser)
-    game.wait_for_loading_screen_to_complete(gameWindow, gameBoard, gameParser)
+    players = game.retrieve_player_list(gameWindow, gameBoard)
+    game.wait_for_loading_screen_to_complete(gameWindow, gameBoard)
 
     file_name = generate_file_name()
     gameTracker = tracker.Tracker(players, file_name=file_name)
@@ -24,11 +22,12 @@ def main():
             break
         img = gameWindow.captureWindow()
 
-        game.parse_state(img, gameBoard, gameTracker, gameParser)
+        game.parse_state(img, gameBoard, gameTracker)
 
     gameTracker.writeToFile()
     # TODO: Implement cleaner and analyzer for file
 
 
 if __name__ == "__main__":
-    main()
+    gameWindow = game.wait_for_window_to_appear()
+    main(gameWindow)

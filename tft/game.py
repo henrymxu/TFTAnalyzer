@@ -1,4 +1,4 @@
-from tft import board, utils, window, image_utils, debugger
+from tft import board, utils, window, image_utils, parser
 
 DebugWindowName = "TFTAnalyzer Debug"
 WindowName = "League of Legends (TM) Client"
@@ -42,36 +42,32 @@ def initialize_game_board(gameWindow):
     return board.Board(size)
 
 
-def retrieve_player_list(gameWindow, gameBoard, gameParser, gameDebugger=None):
+def retrieve_player_list(gameWindow, gameBoard):
     """
 
     :param gameWindow:
     :param gameBoard:
-    :param gameParser:
+    :param parser:
     :param gameDebugger:
     :return:
     """
     players = []
     while not players or len(players) != 8:
         img = gameWindow.captureWindow()
-        players = gameParser.parse_players(board.crop_players(img, gameBoard))
-        if gameDebugger:
-            image_utils.draw_shapes(img, gameBoard.getPlayers())
-            gameDebugger.add_window(img, DebugWindowName, debugger.PlayerWindowOverlay)
-            gameDebugger.show()
+        players = parser.parse_players(board.crop_players(img, gameBoard))
     print("players: {}".format(players))
     return players
 
 
-def wait_for_loading_screen_to_complete(gameWindow, gameBoard, gameParser):
+def wait_for_loading_screen_to_complete(gameWindow, gameBoard):
     count = 8
     while count == 8:
         img = gameWindow.captureWindow()
-        count = len(gameParser.parse_players(board.crop_players(img, gameBoard)))
+        count = len(parser.parse_players(board.crop_players(img, gameBoard)))
         print("Waiting for Game to Begin (Still on Players Loading Screen)")
 
 
-def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
+def parse_state(img, gameBoard, gameTracker):
     """
     The function will parse various information from the screenshot provided and register the data to the Tracker.
 
@@ -84,30 +80,25 @@ def parse_state(img, gameBoard, gameTracker, gameParser, gameDebugger=None):
     :param gameDebugger:
     :return:
     """
-    stage = gameParser.parse_stage(board.crop_stage(img, gameBoard))
+    stage = parser.parse_stage(board.crop_stage(img, gameBoard))
     if not utils.assert_stage_string_format(stage):
-        stage = gameParser.parse_stage(board.crop_stage_early(img, gameBoard))
+        stage = parser.parse_stage(board.crop_stage_early(img, gameBoard))
     if utils.is_carousal_round(stage):
         print("carousal round")  # TODO: Can ignore other parsing during carousal round
-    level = gameParser.parse_level(board.crop_level(img, gameBoard))
-    gold = gameParser.parse_gold(board.crop_gold(img, gameBoard))
-    shop = gameParser.parse_shop(board.crop_shop(img, gameBoard))
+    level = parser.parse_level(board.crop_level(img, gameBoard))
+    gold = parser.parse_gold(board.crop_gold(img, gameBoard))
+    shop = parser.parse_shop(board.crop_shop(img, gameBoard))
     print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
 
     if gameTracker.hasStageChanged(stage):
-        healthbars = _parse_healthbars(img, gameBoard, gameParser)
+        healthbars = _parse_healthbars(img, gameBoard)
         print("healthbars {}".format(healthbars))
         gameTracker.addStage(stage, healthbars, level, gold)
 
     gameTracker.addShopIfChanged(shop, stage, level, gold)
 
-    if gameDebugger:
-        draw_debug_shapes(img, gameBoard)
-        gameDebugger.add_window(img, DebugWindowName, debugger.WindowOverly)
-        gameDebugger.show()
 
-
-def _parse_healthbars(img, gameBoard, gameParser):
+def _parse_healthbars(img, gameBoard):
     top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
     bottom_to_top = board.crop_healthbar(img, gameBoard, 1)
-    return gameParser.parse_healthbars(top_to_bottom, bottom_to_top)
+    return parser.parse_healthbars(top_to_bottom, bottom_to_top)
