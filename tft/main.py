@@ -9,7 +9,6 @@ def generate_file_name():
 
 def main():
     gameParser = parser.Parser()
-
     gameWindow = game.wait_for_window_to_appear()
     gameBoard = game.initialize_game_board(gameWindow)
 
@@ -30,4 +29,6 @@ def main():
     gameTracker.writeToFile()
     # TODO: Implement cleaner and analyzer for file
 
-main()
+
+if __name__ == "__main__":
+    main()

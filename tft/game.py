@@ -4,15 +4,15 @@ DebugWindowName = "TFTAnalyzer Debug"
 WindowName = "League of Legends (TM) Client"
 
 
-def draw_debug_shapes(img, game):
-    image_utils.draw_shape(img, game.getGold())
-    image_utils.draw_shapes(img, game.getShop())
-    image_utils.draw_shape(img, game.getLevel())
-    image_utils.draw_shape(img, game.getStage())
-    image_utils.draw_shapes(img, game.getHealthBars1()[0])
-    image_utils.draw_shapes(img, game.getHealthBars1()[1])
-    image_utils.draw_shapes(img, game.getHealthBars2()[0])
-    image_utils.draw_shapes(img, game.getHealthBars2()[1])
+def draw_debug_shapes(img, gameBoard):
+    image_utils.draw_shape(img, gameBoard.getGold())
+    image_utils.draw_shapes(img, gameBoard.getShop())
+    image_utils.draw_shape(img, gameBoard.getLevel())
+    image_utils.draw_shape(img, gameBoard.getStage())
+    image_utils.draw_shapes(img, gameBoard.getHealthBars1()[0])
+    image_utils.draw_shapes(img, gameBoard.getHealthBars1()[1])
+    image_utils.draw_shapes(img, gameBoard.getHealthBars2()[0])
+    image_utils.draw_shapes(img, gameBoard.getHealthBars2()[1])
 
 
 def wait_for_window_to_appear():
