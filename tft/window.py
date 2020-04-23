@@ -56,6 +56,10 @@ class GameWindow:
         # This class does not need to implement this function as the program does not need to show a window.
         return
 
+    def closeWindowIfNeeded(self):
+        if self.doesWindowExist():
+            cv2.destroyAllWindows()
+
 
 class StaticImageWindow(GameWindow):
     def __init__(self, name, file_name):
@@ -98,8 +102,9 @@ class PreRecordedGameplayWindow(GameWindow):
                 return frame
 
             ret, frame = cap.read()
-            cv2.imshow(self._title, frame)
-            cv2.waitKey(1)
+            if ret:
+                cv2.imshow(self._title, frame)
+                cv2.waitKey(1)
 
         return frame
 
@@ -108,6 +113,9 @@ class PreRecordedGameplayWindow(GameWindow):
         ret, frame = self._cap.read()
         cv2.imshow(self._title, frame)
         cv2.waitKey(1)
+
+    def doesWindowExist(self):
+        return self._cap.isOpened()
 
 
 def get_foreground_window():

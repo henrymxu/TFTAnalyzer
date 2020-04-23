@@ -47,8 +47,6 @@ def retrieve_player_list(gameWindow, gameBoard):
 
     :param gameWindow:
     :param gameBoard:
-    :param parser:
-    :param gameDebugger:
     :return:
     """
     players = []
@@ -67,7 +65,7 @@ def wait_for_loading_screen_to_complete(gameWindow, gameBoard):
         print("Waiting for Game to Begin (Still on Players Loading Screen)")
 
 
-def parse_state(img, gameBoard, gameTracker):
+def parse_state(img, gameBoard, gameTracker, gameHandler):
     """
     The function will parse various information from the screenshot provided and register the data to the Tracker.
 
@@ -77,28 +75,20 @@ def parse_state(img, gameBoard, gameTracker):
     :param img:
     :param gameBoard:
     :param gameTracker:
-    :param gameDebugger:
+    :param gameHandler:
     :return:
     """
     stage = parser.parse_stage(board.crop_stage(img, gameBoard))
     if not utils.assert_stage_string_format(stage):
         stage = parser.parse_stage(board.crop_stage_early(img, gameBoard))
-    if utils.is_carousal_round(stage):
-        print("carousal round")  # TODO: Can ignore other parsing during carousal round
-    level = parser.parse_level(board.crop_level(img, gameBoard))
-    gold = parser.parse_gold(board.crop_gold(img, gameBoard))
-    shop = parser.parse_shop(board.crop_shop(img, gameBoard))
-    print("stage {}, level {}, gold {}, shop {}".format(stage, level, gold, shop))
+
+    if not utils.is_carousal_round(stage):
+        level = parser.parse_level(board.crop_level(img, gameBoard))
+        gold = parser.parse_gold(board.crop_gold(img, gameBoard))
+        if level == -1 and gold == -1:
+            return
+        gameHandler.queue_shop_task(img, gameBoard, stage)
 
     if gameTracker.hasStageChanged(stage):
-        healthbars = _parse_healthbars(img, gameBoard)
-        print("healthbars {}".format(healthbars))
-        gameTracker.addStage(stage, healthbars, level, gold)
+        gameHandler.queue_healthbars_task(img, gameBoard, stage)
 
-    gameTracker.addShopIfChanged(shop, stage, level, gold)
-
-
-def _parse_healthbars(img, gameBoard):
-    top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
-    bottom_to_top = board.crop_healthbar(img, gameBoard, 1)
-    return parser.parse_healthbars(top_to_bottom, bottom_to_top)

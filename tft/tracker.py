@@ -1,57 +1,70 @@
+import multiprocessing
+
 from tft import utils
 
 
 class Tracker:
     def __init__(self, players, file_name=None):
         self.__unitLookupTable = initialize_unit_lookup_table()
-        self.__lastShop = {}
-        self.__stages = []
+        manager = multiprocessing.Manager()
+        self.__stages = manager.dict()
+        self.__current_stage = "0-0"
         self.__players = players
+        self.__file_name = file_name
         if file_name:
-            self.__file_name = file_name
             utils.create_json_array_file(self.__file_name)
+
+        ctx = multiprocessing.get_context('spawn')
+        self.__entry_queue = ctx.SimpleQueue()
+        self.__process = ctx.Process(target=self.addEntries)
+
+    def track(self):
+        self.__process.start()
+
+    def getEntryQueue(self):
+        return self.__entry_queue
 
     def getStages(self):
         return self.__stages
 
     def writeToFile(self):
+        self.__entry_queue.put({"mode": "finish", "contents": {"stage": "0-0"}})
+        self.__process.join()
         if self.__file_name:
-            utils.append_to_json_array_file(self.__file_name, self.__stages)
-
-    def hasShopChanged(self, units):
-        """
-        Determines whether or not the shop has changed.
-
-        New shop items are compared to the previous shop items.  If 2 or more slots have different units,
-        then the shop is considered changed.
-
-        TODO: check gold/stage?
-
-        :param units: list of post-processed units (validated and corrected with UnitLookupTable)
-        :return: boolean
-        """
-        units_changed = 0
-        for i in range(0, 5):
-            if units[i] == "":
-                continue
-            if not self.__lastShop:
-                return True
-            if not self.__lastShop["units"][i] == units[i]:
-                units_changed += 1
-        return units_changed > 1
+            utils.append_to_json_array_file(self.__file_name, self.__stages.copy())
 
     def hasStageChanged(self, stage):
         """
         Determines whether or not the stage has changed.
 
+        If the stage has changed, the current stage is updated
+
         :param stage: string with format (x-y)
         :return: boolean
         """
-        if self.__stages and self.__stages[-1]["stage"] == stage:
-            return False
-        return True
+        result = self.__current_stage != stage
+        if result:
+            self.__current_stage = stage
+            self.createStageIfNeeded(stage)
+        return result
 
-    def addStage(self, stage, healthbars, level, gold):
+    def addEntries(self):
+        while True:
+            data = self.__entry_queue.get()
+            stage = data["contents"]["stage"]
+            if stage == "0-0":
+                break
+            self.createStageIfNeeded(stage)
+            if data["mode"] == "shop":
+                units = data["contents"]["units"]
+                level = data["contents"]["level"]
+                gold = data["contents"]["gold"]
+                self.addShop(stage, units, level, gold)
+            elif data["mode"] == "healthbars":
+                healthbars = data["contents"]["healthbars"]
+                self.addHealthbars(stage, healthbars)
+
+    def addHealthbars(self, stage, healthbars):
         if self.__players:
             players = {}
             for player, health in healthbars:
@@ -59,9 +72,11 @@ class Tracker:
                 players[player] = health
         else:
             players = dict(healthbars)
-        self.__stages.append(_create_stage(stage, players, level, gold))
+        temp_dict = self.__stages[stage].copy()
+        temp_dict["players"] = players
+        self.__stages[stage] = temp_dict
 
-    def addShopIfChanged(self, units, stage, level, gold):
+    def addShop(self, stage, units, level, gold):
         """
         Add a shop to the tracker if has yet to be added, along with the current level and gold amount.
 
@@ -72,16 +87,15 @@ class Tracker:
         :return: boolean
         """
         units = [utils.find_matching_string_in_list(i, self.__unitLookupTable, 75) for i in units]
-        if not self.hasShopChanged(units):
-            return False
         shop = _create_shop(units, level, gold)
-        self._addShopToStage(stage, shop)
-        self.__lastShop = shop
-        return True
+        temp_dict = self.__stages[stage].copy()
+        temp_dict["shops"].append(shop)
+        self.__stages[stage] = temp_dict
 
-    def _addShopToStage(self, stage, shop):
-        saved_stage = next(search for search in self.__stages if search["stage"] == stage)
-        saved_stage["shops"].append(shop)
+    def createStageIfNeeded(self, stage):
+        if stage in self.__stages:
+            return
+        self.__stages[stage] = {"shops": []}
 
 
 def _create_shop(units, level, gold):

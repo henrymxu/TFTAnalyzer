@@ -159,6 +159,50 @@
         "level": 6,
         "gold": 60,
         "stage": "3-6"
+      },
+      {
+        "file_name": "board_1080_5.png",
+        "players": {
+          "huydeptraivlz": 31,
+          "Harry07": 15,
+          "Freemasonry": 7,
+          "Issa TFT": 4,
+          "fib69retrace": 0,
+          "SentinelOfChaos": 0,
+          "Party Weiner": 0
+        },
+        "shop": [
+          "Ezreal",
+          "Shaco",
+          "Ezreal",
+          "Xin Zhao",
+          "Karma"
+        ],
+        "level": 7,
+        "gold": 60,
+        "stage": "6-2"
+      },
+      {
+        "file_name": "board_1080_6.png",
+        "players": {
+          "Freemasonry": 40,
+          "Issa TFT": 33,
+          "huydeptraivlz": 31,
+          "Harry07": 29,
+          "fib69retrace": 27,
+          "SentinelOfChaos": 0,
+          "Party Weiner": 0
+        },
+        "shop": [
+          "Rakan",
+          "Shaco",
+          "Darius",
+          "Rakan",
+          "Rakan"
+        ],
+        "level": 7,
+        "gold": 113,
+        "stage": "5-5"
       }
     ],
     "1440": [

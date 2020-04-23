@@ -78,10 +78,6 @@ def generate_random_window_title():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
 
-def retain_only_digits(string):
-    return re.sub("\D", "", string)
-
-
 def assert_stage_string_format(stage):
     """
 

@@ -84,7 +84,6 @@ def _parse_image_for_text(img, config, pre_process):
     :param img:
     :param config:
     :param pre_process: 1 for white text, 2 for yellow text, 0 for none
-    :param caller:
     :return:
     """
     img_processed = img
@@ -102,5 +101,6 @@ def _parse_image_for_text(img, config, pre_process):
         gray = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
         ret, thresh1 = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
         img_processed = cv2.inRange(thresh1, 0, 0)
+    cv2.imshow(utils.generate_random_window_title(), img_processed)
     text = pytesseract.image_to_string(img_processed, lang='eng', config=config)
     return text

@@ -41,7 +41,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(stage, "4-5")
 
     def test_stage_early(self):
-        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/board_1080P_1.png")
+        gameWindow, gameBoard = initialize_screenshot("/Users/henry/Downloads/TFT Screenshots/board_1080_1.png")
         img = gameWindow.captureWindow()
         stage = parser.parse_stage(board.crop_stage_early(img, gameBoard))
         self.assertEqual(stage, "1-3")
@@ -50,7 +50,7 @@ class TestParser(unittest.TestCase):
         gameWindow, gameBoard = initialize_screenshot(Test1080PDefault)
         img = gameWindow.captureWindow()
         shop = parser.parse_shop(board.crop_shop(img, gameBoard))
-        self.assertEqual(shop, ['Blitzerank', 'Graves', 'Ziggs', 'Zoe', 'Vi'])
+        self.assertEqual(shop, ['Blitzcrank', 'Graves', 'Ziggs', 'Zoe', 'Vi'])
 
     def test_gold(self):
         gameWindow, gameBoard = initialize_screenshot(Test1080PDefault)
@@ -79,27 +79,27 @@ def initialize_complete_test(testcase, type, resolution):
 
 def run_complete_parser_test(testcase, img, data, gameBoard):
     if "shop" in data:
-        shop = testcase.subject.parse_shop(board.crop_shop(img, gameBoard))
+        shop = parser.parse_shop(board.crop_shop(img, gameBoard))
         shop = [utils.find_matching_string_in_list(unit, testcase.unit_lookup) for unit in shop]
         print("Asserting shop: {}".format(shop))
         testcase.assertEqual(data["shop"], shop)
     if "level" in data:
-        level = testcase.subject.parse_level(board.crop_level(img, gameBoard))
+        level = parser.parse_level(board.crop_level(img, gameBoard))
         print("Asserting level: {}".format(level))
         testcase.assertEqual(data["level"], level)
     if "stage" in data:
-        stage = testcase.subject.parse_stage(board.crop_stage(img, gameBoard))
+        stage = parser.parse_stage(board.crop_stage(img, gameBoard))
         if not utils.assert_stage_string_format(stage):
-            stage = testcase.subject.parse_stage(board.crop_stage_early(img, gameBoard))
+            stage = parser.parse_stage(board.crop_stage_early(img, gameBoard))
         print("Asserting stage: {}".format(stage))
         testcase.assertEqual(data["stage"], stage)
     if "gold" in data:
-        gold = testcase.subject.parse_gold(board.crop_gold(img, gameBoard))
+        gold = parser.parse_gold(board.crop_gold(img, gameBoard))
         print("Asserting gold: {}".format(gold))
         testcase.assertEqual(data["gold"], gold)
     if "players" in data:
         if isinstance(data["players"], list):
-            players = testcase.subject.parse_players(board.crop_players(img, gameBoard))
+            players = parser.parse_players(board.crop_players(img, gameBoard))
             print("Asserting players: {}".format(players))
             for player in players:
                 if player == "You":
@@ -109,7 +109,7 @@ def run_complete_parser_test(testcase, img, data, gameBoard):
         elif isinstance(data["players"], dict):
             top_to_bottom = board.crop_healthbar(img, gameBoard, 0)
             bottom_to_top = board.crop_healthbar(img, gameBoard, 1)
-            healthbars = testcase.subject.parse_healthbars(top_to_bottom, bottom_to_top)
+            healthbars = parser.parse_healthbars(top_to_bottom, bottom_to_top)
             print("Asserting healthbars: {}".format(healthbars))
             player_names = data["players"].keys()
             blank_count = 0
