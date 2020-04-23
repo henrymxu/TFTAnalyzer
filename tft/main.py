@@ -7,15 +7,15 @@ def generate_file_name():
     return "test/{}.json".format(str(int(ts)))
 
 
-def main(gameWindow, file_name=None):
+def main(gameWindow, gameDebugger=None, file_name=None):
     gameBoard = game.initialize_game_board(gameWindow)
 
-    players = game.retrieve_player_list(gameWindow, gameBoard)
+    players = game.retrieve_player_list(gameWindow, gameBoard, gameDebugger)
     game.wait_for_loading_screen_to_complete(gameWindow, gameBoard)
 
     gameTracker = tracker.Tracker(players, file_name=file_name)
     gameTracker.track()
-    gameHandler = handler.Handler(gameTracker.getEntryQueue())
+    gameHandler = handler.Handler(gameTracker.getEntryQueue(), gameDebugger)
     gameHandler.start()
 
     while True:
@@ -27,6 +27,9 @@ def main(gameWindow, file_name=None):
             break
         game.parse_state(img, gameBoard, gameTracker, gameHandler)
 
+        if gameDebugger:
+            gameDebugger.show()
+
     gameWindow.closeWindowIfNeeded()
     gameHandler.finish()
     gameTracker.writeToFile()
@@ -37,4 +40,4 @@ def main(gameWindow, file_name=None):
 if __name__ == "__main__":
     gameWindow = game.wait_for_window_to_appear()
     file_name = generate_file_name()
-    main(gameWindow, file_name)
+    main(gameWindow, file_name=file_name)

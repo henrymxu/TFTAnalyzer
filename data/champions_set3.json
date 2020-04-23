@@ -426,6 +426,15 @@
     ]
   },
   {
+    "name": "Xerath",
+    "championId": "TFT3_Xerath",
+    "cost": 5,
+    "traits": [
+      "Dark Star",
+      "Sorcerer"
+    ]
+  },
+  {
     "name": "Xin Zhao",
     "championId": "TFT3_XinZhao",
     "cost": 2,

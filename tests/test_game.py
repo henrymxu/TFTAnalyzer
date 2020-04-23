@@ -2,12 +2,12 @@ import time
 import unittest
 
 from tests import initialize_screenshot, initialize_video
-from tft import game, tracker, main, handler
+from tft import game, tracker, main, handler, debugger
 
 Test1080PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_10.png"
 Test1440PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_15.png"
 
-Test1080PDefaultRecording = "/Users/henry/Downloads/TFT Screenshots/video_1080_4.mkv"
+Test1080PDefaultRecording = "/Users/henry/Downloads/TFT Screenshots/video_1080_3_short_3.mp4"
 Test1440PDefaultRecording = "/Users/henry/Downloads/TFT Screenshots/video_1440_2.mkv"
 
 
@@ -27,8 +27,11 @@ class TestGame(unittest.TestCase):
         main.main(gameWindow)
 
     def test_parse_state_1080p_video(self):
+        gameDebugger = debugger.Debugger()
+        gameDebugger.enable_parse_gold()
         gameWindow = initialize_video(Test1080PDefaultRecording)
-        main.main(gameWindow, "test/testing_2.json")
+        main.main(gameWindow, gameDebugger, "test/testing_2.json")
+
 
 def test_screenshot(testcase, file_name):
     gameWindow, gameBoard = initialize_screenshot(file_name)
@@ -39,6 +42,7 @@ def test_screenshot(testcase, file_name):
 
     game.parse_state(img, gameBoard, gameTracker, gameHandler)
     time.sleep(10)
+
 
 if __name__ == '__main__':
     unittest.main()

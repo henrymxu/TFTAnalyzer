@@ -8,13 +8,13 @@ FinishTask = "finish"
 
 
 class Handler:
-    def __init__(self, result_queue):
+    def __init__(self, result_queue, debug=None):
         ctx = multiprocessing.get_context('spawn')
         self.__processes = []
         self.__task_queue = ctx.Queue()
 
         for _ in range(multiprocessing.cpu_count() - 1):
-            process = ctx.Process(target=TaskHandler, args=(self.__task_queue, result_queue))
+            process = ctx.Process(target=TaskHandler, args=(self.__task_queue, result_queue, debug))
             self.__processes.append(process)
 
     def start(self):
@@ -43,19 +43,21 @@ class Handler:
         self._queue_task(HealthbarsTask, imgs, functions, stage)
 
     def _queue_task(self, mode, imgs, functions, stage):
+        if self.__task_queue.qsize() >= 10:
+            print(f"Large queue size: {self.__task_queue.qsize()}")
         self.__task_queue.put(_serialize_task(mode, imgs, functions, stage))
 
 
-def TaskHandler(task_queue, results_queue):
+def TaskHandler(task_queue, results_queue, debug):
     while True:
         task = task_queue.get()
         mode, imgs, functions, stage = _deserialize_task(task)
         if mode == FinishTask:
             break
         if mode == ShopTask:
-            contents = _handle_shop(stage, imgs, functions)
+            contents = _handle_shop(stage, imgs, functions, debug)
         else:  # mode == "healthbars
-            contents = _handle_healthbars(stage, imgs, functions)
+            contents = _handle_healthbars(stage, imgs, functions, debug)
         results_queue.put({"mode": mode, "contents": contents})
 
 
@@ -67,17 +69,17 @@ def _deserialize_task(task):
     return task[0], task[1], task[2], task[3]
 
 
-def _handle_shop(stage, imgs, functions):
+def _handle_shop(stage, imgs, functions, debug=None):
     assert (len(imgs) == 3)
     assert (len(functions) == 3)
-    level = functions[0](imgs[0])
-    gold = functions[1](imgs[1])
-    shop = functions[2](imgs[2])
+    level = functions[0](imgs[0], debug)
+    gold = functions[1](imgs[1], debug)
+    shop = functions[2](imgs[2], debug)
     return {"stage": stage, "units": shop, "level": level, "gold": gold}
 
 
-def _handle_healthbars(stage, imgs, functions):
+def _handle_healthbars(stage, imgs, functions, debug=None):
     assert (len(imgs) == 2)
     assert (len(functions) == 1)
-    healthbars = functions[0](imgs[0], imgs[1])
+    healthbars = functions[0](imgs[0], imgs[1], debug)
     return {"stage": stage, "healthbars": healthbars}

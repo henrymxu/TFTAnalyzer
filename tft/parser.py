@@ -2,32 +2,32 @@ import cv2
 import numpy as np
 import pytesseract
 
-from tft import utils
+from tft import utils, debugger
 
 
-def parse_gold(img):
+def parse_gold(img, debug=None):
     config = '--psm 8 --oem 3 -c tessedit_char_whitelist=1234567890'
-    return utils.convert_string_to_integer(_parse_image_for_text(img, config, 1))
+    return utils.convert_string_to_integer(_parse_image_for_text(img, config, 1, debug, debugger.ParseGold))
 
 
-def parse_stage(img):
+def parse_stage(img, debug=None):
     config = '--psm 8 -c tessedit_char_whitelist=123456789-'
-    return _parse_image_for_text(img, config, 2)
+    return _parse_image_for_text(img, config, 2, debug, debugger.ParseStage)
 
 
-def parse_level(img):
+def parse_level(img, debug=None):
     config = '--psm 10 --oem 3 -c tessedit_char_whitelist=123456789'
-    return utils.convert_string_to_integer(_parse_image_for_text(img, config, 1))
+    return utils.convert_string_to_integer(_parse_image_for_text(img, config, 1, debug, debugger.ParseLevel))
 
 
-def parse_shop(imgs):
+def parse_shop(imgs, debug=None):
     shop = []
     for img in imgs:
-        shop.append(_parse_image_for_text(img, '--psm 7', 1))
+        shop.append(_parse_image_for_text(img, '--psm 7', 1, debug, debugger.ParseShop))
     return shop
 
 
-def parse_healthbars(top_to_bottom, bottom_to_top):
+def parse_healthbars(top_to_bottom, bottom_to_top, debug=None):
     """
     Determines the health of each player.
 
@@ -35,6 +35,7 @@ def parse_healthbars(top_to_bottom, bottom_to_top):
 
     :param top_to_bottom:
     :param bottom_to_top:
+    :param debug:
     :return: list of tuples containing (name, health)
     """
     healthbars = []
@@ -42,15 +43,15 @@ def parse_healthbars(top_to_bottom, bottom_to_top):
         for player in range(0, 8):
             name_config = '--psm 7 --oem 3'
             health_config = '--psm 7 -c tessedit_char_whitelist=1234567890'
-            name = _parse_image_for_text(img[0][player], name_config, 1)
+            name = _parse_image_for_text(img[0][player], name_config, 1, debug, debugger.ParseHealthbars)
             health = utils.convert_string_to_integer(
-                _parse_image_for_text(img[1][player], health_config, 1))
+                _parse_image_for_text(img[1][player], health_config, 1, debug, debugger.ParseHealthbars))
             if health != -1:
                 healthbars.append((name, int(health)))
     return healthbars
 
 
-def parse_players(imgs):
+def parse_players(imgs, debug=None):
     """
     Determines the players in the game from the loading screen.
 
@@ -60,12 +61,13 @@ def parse_players(imgs):
     TODO: Change return value to set
 
     :param imgs: cropped images of the loading screen
+    :param debug:
     :return: list of players
     """
     players = []
     blank_count = 0  # TODO: Improve this logic, kinda unclear
     for img in imgs:
-        possible_player = _parse_image_for_text(img, '--psm 7', 1)
+        possible_player = _parse_image_for_text(img, '--psm 7', 1, debug, debugger.ParsePlayers)
         if possible_player:
             player = possible_player
         else:
@@ -78,7 +80,7 @@ def parse_players(imgs):
     return players
 
 
-def _parse_image_for_text(img, config, pre_process):
+def _parse_image_for_text(img, config, pre_process, debug=None, caller=""):
     """
 
     :param img:
@@ -101,6 +103,7 @@ def _parse_image_for_text(img, config, pre_process):
         gray = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
         ret, thresh1 = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
         img_processed = cv2.inRange(thresh1, 0, 0)
-    cv2.imshow(utils.generate_random_window_title(), img_processed)
     text = pytesseract.image_to_string(img_processed, lang='eng', config=config)
+    if debug:
+        debug.add_window(img_processed, f"{text}-{utils.generate_random_window_title()}", caller)
     return text

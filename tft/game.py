@@ -42,7 +42,7 @@ def initialize_game_board(gameWindow):
     return board.Board(size)
 
 
-def retrieve_player_list(gameWindow, gameBoard):
+def retrieve_player_list(gameWindow, gameBoard, gameDebugger=None):
     """
 
     :param gameWindow:
@@ -52,7 +52,9 @@ def retrieve_player_list(gameWindow, gameBoard):
     players = []
     while not players or len(players) != 8:
         img = gameWindow.captureWindow()
-        players = parser.parse_players(board.crop_players(img, gameBoard))
+        players = parser.parse_players(board.crop_players(img, gameBoard), gameDebugger)
+    if gameDebugger:
+        gameDebugger.show()
     print("players: {}".format(players))
     return players
 
