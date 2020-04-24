@@ -78,6 +78,10 @@ def generate_random_window_title():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
 
 
+def clean_string(string):
+    return re.sub('[^A-Za-z0-9]+', '', string)
+
+
 def assert_stage_string_format(stage):
     """
 

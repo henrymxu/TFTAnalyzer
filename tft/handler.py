@@ -13,7 +13,7 @@ class Handler:
         self.__processes = []
         self.__task_queue = ctx.Queue()
 
-        for _ in range(multiprocessing.cpu_count() - 1):
+        for _ in range(4):
             process = ctx.Process(target=TaskHandler, args=(self.__task_queue, result_queue, debug))
             self.__processes.append(process)
 
@@ -38,8 +38,10 @@ class Handler:
         self._queue_task(ShopTask, imgs, functions, stage)
 
     def queue_healthbars_task(self, img, gameBoard, stage):
+        cropped_circles = board.crop_healthbar_circles(img, gameBoard)
+        result = parser.parse_healthbar_circles(cropped_circles)
         functions = [parser.parse_healthbars]
-        imgs = [board.crop_healthbar(img, gameBoard, 0), board.crop_healthbar(img, gameBoard, 1)]
+        imgs = [board.crop_healthbars(img, gameBoard, result)]
         self._queue_task(HealthbarsTask, imgs, functions, stage)
 
     def _queue_task(self, mode, imgs, functions, stage):
@@ -58,6 +60,7 @@ def TaskHandler(task_queue, results_queue, debug):
             contents = _handle_shop(stage, imgs, functions, debug)
         else:  # mode == "healthbars
             contents = _handle_healthbars(stage, imgs, functions, debug)
+            print(contents)
         results_queue.put({"mode": mode, "contents": contents})
 
 
@@ -79,7 +82,7 @@ def _handle_shop(stage, imgs, functions, debug=None):
 
 
 def _handle_healthbars(stage, imgs, functions, debug=None):
-    assert (len(imgs) == 2)
+    assert (len(imgs) == 1)
     assert (len(functions) == 1)
-    healthbars = functions[0](imgs[0], imgs[1], debug)
+    healthbars = functions[0](imgs[0], debug)
     return {"stage": stage, "healthbars": healthbars}

@@ -4,6 +4,10 @@
       1920,
       1080
     ],
+    "scaling": {
+      "healthbar_name": 250,
+      "healthbar_value": 250
+    },
     "contents": {
       "stage": {
         "x": 778,
@@ -71,6 +75,24 @@
         "width": 28,
         "height": 20,
         "gap": 52
+      },
+      "health_bar_circles": {
+        "x": 1825,
+        "y": 180,
+        "width": 90,
+        "height": 90,
+        "gap": -18,
+        "buffer_spacing": 4,
+        "name_x": 1660,
+        "name_height": 31,
+        "name_width": 160,
+        "value_x": 1822,
+        "value_height": 20,
+        "value_width": 28,
+        "own_value_x": 1785,
+        "own_value_height": 28,
+        "own_value_width": 40,
+        "own_circle_radius": 35
       }
     }
   },
@@ -79,6 +101,10 @@
       2560,
       1440
     ],
+    "scaling": {
+      "healthbar_name": 200,
+      "healthbar_value": 200
+    },
     "contents": {
       "stage": {
         "x": 1035,
@@ -146,6 +172,24 @@
         "width": 30,
         "height": 30,
         "gap": 66
+      },
+      "health_bar_circles": {
+        "x": 2430,
+        "y": 240,
+        "width": 122,
+        "height": 120,
+        "gap": -24,
+        "buffer_spacing": 4,
+        "name_x": 2260,
+        "name_height": 46,
+        "name_width": 160,
+        "value_x": 2430,
+        "value_height": 30,
+        "value_width": 34,
+        "own_value_x": 2378,
+        "own_value_height": 40,
+        "own_value_width": 58,
+        "own_circle_radius": 42
       }
     }
   }

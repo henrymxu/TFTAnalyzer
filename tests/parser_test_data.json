@@ -81,7 +81,8 @@
           "YeaHey": 125,
           "ChlngWa": 125,
           "peachthesnake": 125,
-          "thienhandsome": 125
+          "thienhandsome": 125,
+          "": 125
         },
         "shop": [
           "Jarvan IV",
@@ -101,6 +102,7 @@
           "Riftx": 69,
           "Ajido": 65,
           "ajmonsta": 64,
+          "": 51,
           "Cris": 32,
           "IMSparrow": 24,
           "Gee Lii TypeMay": 24
@@ -120,6 +122,7 @@
         "file_name": "board_1080_3.png",
         "players": {
           "avertion": 100,
+          "": 98,
           "NPP Hard": 90,
           "ChlngWa": 84,
           "bradthedumbling": 84,
@@ -141,6 +144,7 @@
       {
         "file_name": "board_1080_4.png",
         "players": {
+          "": 98,
           "avertion": 93,
           "NPP Hard": 83,
           "ChlngWa": 76,
@@ -163,6 +167,7 @@
       {
         "file_name": "board_1080_5.png",
         "players": {
+          "": 69,
           "huydeptraivlz": 31,
           "Harry07": 15,
           "Freemasonry": 7,
@@ -185,6 +190,7 @@
       {
         "file_name": "board_1080_6.png",
         "players": {
+          "": 84,
           "Freemasonry": 40,
           "Issa TFT": 33,
           "huydeptraivlz": 31,
@@ -218,6 +224,7 @@
           "TFT Clover": 25,
           "Empty bluesoul": 23,
           "kmillz": 5,
+          "": 5,
           "Hoe Chii Minh": 3,
           "Rok Solid": 0
         },
@@ -231,6 +238,29 @@
         "level": 8,
         "gold": 20,
         "stage": "5-5"
+      },
+      {
+        "file_name": "board_1440_3.png",
+        "players": {
+          "": 100,
+          "2dog Li": 100,
+          "Erichhhh": 98,
+          "Stacking Bot": 90,
+          "Huytrau3003": 88,
+          "Dsym": 84,
+          "Darkness Devil": 80,
+          "Spicy Chicken": 80
+        },
+        "shop": [
+          "Rakan",
+          "Lucian",
+          "Ziggs",
+          "Rakan",
+          ""
+        ],
+        "level": 5,
+        "gold": 15,
+        "stage": "2-6"
       }
     ]
   }

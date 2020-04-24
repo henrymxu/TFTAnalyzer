@@ -23,6 +23,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.convert_string_to_integer("asdf"), -1)
         self.assertEqual(utils.convert_string_to_integer("0"), 0)
 
+    def test_clean_string(self):
+        self.assertEqual(utils.clean_string("[]~test*&^"), "test")
+
 
 if __name__ == '__main__':
     unittest.main()

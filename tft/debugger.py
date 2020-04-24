@@ -10,6 +10,7 @@ ParseLevel = "parse_level"
 ParseShop = "parse_shop"
 ParseHealthbars = "parse_healthbars"
 ParsePlayers = "parse_players"
+ParseCircles = "parse_circles"
 
 
 class Debugger:
@@ -33,6 +34,7 @@ class Debugger:
         self.enable_parse_stage()
         self.enable_parse_level()
         self.enable_parse_shop()
+        self.enable_parse_circles()
         self.enable_parse_healthbars()
         self.enable_parse_players()
 
@@ -53,6 +55,9 @@ class Debugger:
 
     def enable_parse_shop(self):
         self.__debuggable_functions[ParseShop] = True
+
+    def enable_parse_circles(self):
+        self.__debuggable_functions[ParseCircles] = True
 
     def enable_parse_healthbars(self):
         self.__debuggable_functions[ParseHealthbars] = True

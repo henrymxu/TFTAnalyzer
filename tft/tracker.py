@@ -68,9 +68,11 @@ class Tracker:
         if self.__players:
             players = {}
             for player, health in healthbars:
-                player = utils.find_matching_string_in_list(player, self.__players, 80)
-                players[player] = health
-        else:
+                matched_player = utils.find_matching_string_in_list(player, self.__players, 80)
+                if matched_player == "" and player.isdigit():
+                    players[""] = player
+                players[matched_player] = health
+        else: # Should never happen
             players = dict(healthbars)
         temp_dict = self.__stages[stage].copy()
         temp_dict["players"] = players

@@ -20,9 +20,10 @@ def draw_shapes(img, vertices):
 
 
 def draw_shape(img, vertices):
-    pts = np.array(vertices, np.int32)
-    pts = pts.reshape((-1, 1, 2))
-    cv2.polylines(img, [pts], True, (0, 255, 255))
+    if vertices is not None:
+        pts = np.array(vertices, np.int32)
+        pts = pts.reshape((-1, 1, 2))
+        cv2.polylines(img, [pts], True, (0, 255, 255))
 
 
 def crop_shape(img, vertex, scale_percent=100):
@@ -39,9 +40,12 @@ def crop_shape(img, vertex, scale_percent=100):
 def crop_shapes(img, vertices, scale_percent=100):
     imgs = []
     for vertex in vertices:
+        if vertex is None:
+            imgs.append(None)
+            continue
         imgs.append(crop_shape(img, vertex, scale_percent))
     return imgs
 
 
-def wait():
-    cv2.waitKey(25)
+def wait(seconds=25):
+    cv2.waitKey(seconds)
