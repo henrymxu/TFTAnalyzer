@@ -21,6 +21,18 @@
         "width": 35,
         "height": 25
       },
+      "timer": {
+        "x": 1131,
+        "y": 10,
+        "width": 35,
+        "height": 24
+      },
+      "timer_early": {
+        "x": 1080,
+        "y": 10,
+        "width": 35,
+        "height": 24
+      },
       "level": {
         "x": 315,
         "y": 880,
@@ -116,6 +128,18 @@
         "x": 1110,
         "y": 15,
         "width": 50,
+        "height": 30
+      },
+      "timer": {
+        "x": 1512,
+        "y": 15,
+        "width": 45,
+        "height": 30
+      },
+      "timer_early": {
+        "x": 1440,
+        "y": 15,
+        "width": 45,
         "height": 30
       },
       "level": {

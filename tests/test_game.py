@@ -24,13 +24,11 @@ class TestGame(unittest.TestCase):
 
     def test_parse_state_1440p_video(self):
         gameDebugger = debugger.Debugger()
-        gameDebugger.enable_parse_gold()
         gameWindow = initialize_video(Test1440PDefaultRecording)
         main.main(gameWindow, gameDebugger, "test/testing_1440.json")
 
     def test_parse_state_1080p_video(self):
         gameDebugger = debugger.Debugger()
-        gameDebugger.enable_parse_gold()
         gameWindow = initialize_video(Test1080PDefaultRecording)
         main.main(gameWindow, gameDebugger, "test/testing_1080.json")
 

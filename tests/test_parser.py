@@ -4,8 +4,8 @@ from tests import initialize_screenshot
 from tft import game, board, utils, tracker, parser, debugger
 
 TestFile = "parser_test_data.json"
-Test1080PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1080_5.png"
-Test1440PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1440_2.png"
+Test1080PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1080_1.png"
+Test1440PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1440_1.png"
 
 
 class TestParser(unittest.TestCase):
@@ -67,6 +67,12 @@ class TestParser(unittest.TestCase):
         gold = parser.parse_gold(board.crop_gold(img, gameBoard))
         self.assertEqual(gold, 50)
 
+    def test_timer(self):
+        gameWindow, gameBoard = initialize_screenshot(Test1440PDefault)
+        img = gameWindow.captureWindow()
+        timer = parser.parse_timer(board.crop_timer_early(img, gameBoard))
+        print(timer)
+
     def test_parser_complete_1080p(self):
         initialize_complete_test(self, "players", "1080")
         initialize_complete_test(self, "board", "1080")
@@ -102,6 +108,12 @@ def run_complete_parser_test(testcase, img, data, gameBoard):
             stage = parser.parse_stage(board.crop_stage_early(img, gameBoard), testcase.debug)
         print("Asserting stage: {}".format(stage))
         testcase.assertEqual(data["stage"], stage)
+    if "timer" in data:
+        timer = parser.parse_timer(board.crop_timer(img, gameBoard), testcase.debug)
+        if timer == - 1:
+            timer = parser.parse_timer(board.crop_timer_early(img, gameBoard), testcase.debug)
+        print("Asserting timer: {}".format(timer))
+        testcase.assertEqual(data["timer"], timer)
     if "gold" in data:
         gold = parser.parse_gold(board.crop_gold(img, gameBoard), testcase.debug)
         print("Asserting gold: {}".format(gold))

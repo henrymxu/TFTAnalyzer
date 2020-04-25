@@ -80,9 +80,11 @@ def parse_state(img, gameBoard, gameTracker, gameHandler):
     :param gameHandler:
     :return:
     """
-    stage = parser.parse_stage(board.crop_stage(img, gameBoard))
+    stage_img, timer_img = board.crop_header(img, gameBoard)
+    stage, timer = parser.parse_header(stage_img, timer_img)
     if not utils.assert_stage_string_format(stage):
-        stage = parser.parse_stage(board.crop_stage_early(img, gameBoard))
+        stage_img, timer_img = board.crop_header_early(img, gameBoard)
+        stage, timer = parser.parse_header(stage_img, timer_img)
 
     if not utils.is_carousal_round(stage):
         level = parser.parse_level(board.crop_level(img, gameBoard))

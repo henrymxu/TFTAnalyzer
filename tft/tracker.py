@@ -75,7 +75,7 @@ class Tracker:
         else: # Should never happen
             players = dict(healthbars)
         temp_dict = self.__stages[stage].copy()
-        temp_dict["players"] = players
+        temp_dict["players"].append(players)
         self.__stages[stage] = temp_dict
 
     def addShop(self, stage, units, level, gold):
@@ -97,7 +97,7 @@ class Tracker:
     def createStageIfNeeded(self, stage):
         if stage in self.__stages:
             return
-        self.__stages[stage] = {"shops": []}
+        self.__stages[stage] = {"shops": [], "healthbars": []}
 
 
 def _create_shop(units, level, gold):

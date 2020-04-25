@@ -27,6 +27,15 @@ def parse_shop(imgs, debug=None):
     return shop
 
 
+def parse_timer(img, debug=None):
+    config = '--psm 8 --oem 3 -c tessedit_char_whitelist=1234567890'
+    return utils.convert_string_to_integer(_parse_image_for_text(img, config, 1, debug, debugger.ParseTimer))
+
+
+def parse_header(stage_img, timer_img, debug=None):
+    return parse_stage(stage_img, debug), parse_timer(timer_img, debug)
+
+
 def parse_healthbars_legacy(top_to_bottom, bottom_to_top, debug=None):
     """
     Determines the health of each player.

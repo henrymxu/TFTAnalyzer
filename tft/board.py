@@ -23,6 +23,12 @@ class Board:
     def getStageEarly(self):
         return self.__vertices["stage_early"]
 
+    def getTimer(self):
+        return self.__vertices["timer"]
+
+    def getTimerEarly(self):
+        return self.__vertices["timer_early"]
+
     def getPlayers(self):
         return self.__vertices["players"]
 
@@ -60,6 +66,8 @@ def _generate_board_data(size):
                 "level": __create_rectangle_from_data(vertices_data["level"]),
                 "stage": __create_rectangle_from_data(vertices_data["stage"]),
                 "stage_early": __create_rectangle_from_data(vertices_data["stage_early"]),
+                "timer": __create_rectangle_from_data(vertices_data["timer"]),
+                "timer_early": __create_rectangle_from_data(vertices_data["timer_early"]),
                 "health_bar_names_1": __create_column_of_rectangles_from_data(
                     vertices_data["health_bar_names_top_to_bottom"], 8),
                 "health_bar_values_1": __create_column_of_rectangles_from_data(
@@ -171,6 +179,22 @@ def crop_stage_early(img, gameBoard):
     return image_utils.crop_shape(img, gameBoard.getStageEarly()[0], 200)
 
 
+def crop_timer(img, gameBoard):
+    return image_utils.crop_shape(img, gameBoard.getTimer()[0], 200)
+
+
+def crop_timer_early(img, gameBoard):
+    return image_utils.crop_shape(img, gameBoard.getTimerEarly()[0], 200)
+
+
+def crop_header(img, gameBoard):
+    return crop_stage(img, gameBoard), crop_timer(img, gameBoard)
+
+
+def crop_header_early(img, gameBoard):
+    return crop_stage_early(img, gameBoard), crop_timer_early(img, gameBoard)
+
+
 def crop_level(img, gameBoard):
     return image_utils.crop_shape(img, gameBoard.getLevel()[0], 300)
 
@@ -191,29 +215,6 @@ def crop_healthbars_legacy(img, gameBoard, direction):
         names = image_utils.crop_shapes(img, gameBoard.getHealthBars2()[0], 150)
         values = image_utils.crop_shapes(img, gameBoard.getHealthBars2()[1], 150)
     return names, values
-
-
-# def _find_healthbars_from_circles(circles, size_data):
-#     results = []
-#     x_offset = size_data["x"]
-#     y_offset = size_data["y"]
-#     extra = size_data["extra_spacing"]
-#     for circle in circles:
-#         x_circle, y_circle, r = int(circle[0] / 2), int(circle[1] / 2), int(circle[2] / 2)
-#         own_circle_threshold = size_data["own_circle_radius"]
-#         value_height = size_data["value_height"]
-#         value_width = size_data["value_width"]
-#         if r > own_circle_threshold:
-#             value_height = size_data["own_value_height"]
-#             value_width = size_data["own_value_width"]
-#         name_height = size_data["name_height"]
-#         name_width = size_data["name_width"]
-#         name_y = y_circle - int(name_height / 2)
-#         value_y = y_offset + y_circle - int(value_height / 2) + extra
-#         value_x = x_offset + x_circle - r - value_width + extra
-#         results.append(__create_rectangle(value_x, value_y, value_width, value_height)[0])
-#         y_offset += (size_data["gap"] + size_data["height"])
-#     return results
 
 
 def crop_players(img, gameBoard):
