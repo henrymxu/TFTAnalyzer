@@ -153,12 +153,13 @@ def _find_healthbars_from_circles(circles, size_data):
     own_circle_radius_thresh = size_data["own_circle_radius"]
     buffer_spacing = size_data["buffer_spacing"]
     y_offset = size_data["y"]
+    x_circle, y_circle, r = 0, 0, 0
     for circle in circles:
-        x_circle, y_circle, r = int(circle[0] / 2), int(circle[1] / 2), int(circle[2] / 2)
+        if circle is not None:
+            x_circle, y_circle, r = int(circle[0] / 2), int(circle[1] / 2), int(circle[2] / 2)
         n_x, n_height, n_width = size_data["name_x"], size_data["name_height"], size_data["name_width"]
         n_y = y_offset + y_circle - int(n_height / 2) - int(buffer_spacing / 2)
         n_results.append(__create_rectangle(n_x, n_y, n_width, n_height + buffer_spacing * 2)[0])
-
         v_x, v_height, v_width = size_data["value_x"], size_data["value_height"], size_data["value_width"]
         if r > own_circle_radius_thresh:
             n_results[-1] = None
@@ -172,19 +173,19 @@ def _find_healthbars_from_circles(circles, size_data):
 
 
 def crop_stage(img, gameBoard):
-    return image_utils.crop_shape(img, gameBoard.getStage()[0], 200)
+    return image_utils.crop_shape(img, gameBoard.getStage()[0], 100)
 
 
 def crop_stage_early(img, gameBoard):
-    return image_utils.crop_shape(img, gameBoard.getStageEarly()[0], 200)
+    return image_utils.crop_shape(img, gameBoard.getStageEarly()[0], 100)
 
 
 def crop_timer(img, gameBoard):
-    return image_utils.crop_shape(img, gameBoard.getTimer()[0], 200)
+    return image_utils.crop_shape(img, gameBoard.getTimer()[0], 100)
 
 
 def crop_timer_early(img, gameBoard):
-    return image_utils.crop_shape(img, gameBoard.getTimerEarly()[0], 200)
+    return image_utils.crop_shape(img, gameBoard.getTimerEarly()[0], 100)
 
 
 def crop_header(img, gameBoard):

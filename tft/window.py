@@ -80,11 +80,12 @@ class StaticImageWindow(GameWindow):
 
 
 class PreRecordedGameplayWindow(GameWindow):
-    def __init__(self, name, file_name):
+    def __init__(self, name, file_name, show=False):
         super().__init__(name)
         self._file_name = file_name
         self._freq = 60
         self._cap = None
+        self._show = show
 
     def captureWindow(self):
         """
@@ -103,8 +104,9 @@ class PreRecordedGameplayWindow(GameWindow):
 
             ret, frame = cap.read()
             if ret:
-                cv2.imshow(self._title, frame)
-                cv2.waitKey(1)
+                if self._show:
+                    cv2.imshow(self._title, frame)
+                    cv2.waitKey(1)
 
         return frame
 

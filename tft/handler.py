@@ -40,6 +40,8 @@ class Handler:
     def queue_healthbars_task(self, img, gameBoard, stage):
         cropped_circles = board.crop_healthbar_circles(img, gameBoard)
         result = parser.parse_healthbar_circles(cropped_circles)
+        if len(result) != 8:
+            print(f"Not queuing healthbars task, only found {len(result)} circles")
         functions = [parser.parse_healthbars]
         imgs = [board.crop_healthbars(img, gameBoard, result)]
         self._queue_task(HealthbarsTask, imgs, functions, stage)
@@ -47,13 +49,14 @@ class Handler:
     def _queue_task(self, mode, imgs, functions, stage):
         if self.__task_queue.qsize() >= 10:
             print(f"Large queue size: {self.__task_queue.qsize()}")
-        self.__task_queue.put(_serialize_task(mode, imgs, functions, stage))
+        timestamp = utils.get_time()
+        self.__task_queue.put(_serialize_task(mode, imgs, functions, stage, timestamp))
 
 
 def TaskHandler(task_queue, results_queue, debug):
     while True:
         task = task_queue.get()
-        mode, imgs, functions, stage = _deserialize_task(task)
+        mode, imgs, functions, stage, timestamp = _deserialize_task(task)
         if mode == FinishTask:
             break
         if mode == ShopTask:
@@ -61,15 +64,15 @@ def TaskHandler(task_queue, results_queue, debug):
         else:  # mode == "healthbars
             contents = _handle_healthbars(stage, imgs, functions, debug)
             print(contents)
-        results_queue.put({"mode": mode, "contents": contents})
+        results_queue.put({"mode": mode, "contents": contents, "timestamp": timestamp})
 
 
-def _serialize_task(mode, imgs, functions, stage):
-    return mode, imgs, functions, stage
+def _serialize_task(mode, imgs, functions, stage, timestamp):
+    return mode, imgs, functions, stage, timestamp
 
 
 def _deserialize_task(task):
-    return task[0], task[1], task[2], task[3]
+    return task[0], task[1], task[2], task[3], task[4]
 
 
 def _handle_shop(stage, imgs, functions, debug=None):

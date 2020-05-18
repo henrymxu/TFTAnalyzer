@@ -5,7 +5,7 @@ from tft import game, board, utils, tracker, parser, debugger
 
 TestFile = "parser_test_data.json"
 Test1080PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1080_1.png"
-Test1440PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1440_1.png"
+Test1440PDefault = "/Users/henry/Downloads/TFT Screenshots/board_1440_5.png"
 
 
 class TestParser(unittest.TestCase):
@@ -56,10 +56,13 @@ class TestParser(unittest.TestCase):
         self.assertEqual(stage, "1-3")
 
     def test_shop(self):
-        gameWindow, gameBoard = initialize_screenshot(Test1080PDefault)
+        self.debug.validation_mode()
+        self.debug.enable_parse_shop()
+        gameWindow, gameBoard = initialize_screenshot(Test1440PDefault)
         img = gameWindow.captureWindow()
-        shop = parser.parse_shop(board.crop_shop(img, gameBoard))
-        self.assertEqual(shop, ['Blitzcrank', 'Graves', 'Ziggs', 'Zoe', 'Vi'])
+        shop = parser.parse_shop(board.crop_shop(img, gameBoard), self.debug)
+        print(shop)
+        self.debug.show()
 
     def test_gold(self):
         gameWindow, gameBoard = initialize_screenshot(Test1080PDefault)
@@ -78,6 +81,8 @@ class TestParser(unittest.TestCase):
         initialize_complete_test(self, "board", "1080")
 
     def test_parser_complete_1440p(self):
+        self.debug.validation_mode()
+        self.debug.enable_parse_timer()
         initialize_complete_test(self, "players", "1440")
         initialize_complete_test(self, "board", "1440")
 
@@ -113,6 +118,7 @@ def run_complete_parser_test(testcase, img, data, gameBoard):
         if timer == - 1:
             timer = parser.parse_timer(board.crop_timer_early(img, gameBoard), testcase.debug)
         print("Asserting timer: {}".format(timer))
+        testcase.debug.show()
         testcase.assertEqual(data["timer"], timer)
     if "gold" in data:
         gold = parser.parse_gold(board.crop_gold(img, gameBoard), testcase.debug)
@@ -137,7 +143,7 @@ def run_complete_parser_test(testcase, img, data, gameBoard):
             for healthbar in healthbars:
                 res = utils.find_matching_string_in_list(healthbar[0], player_names)
                 health = healthbar[1]
-                if res == "" and healthbar[0].isdigit(): # Own HP Testcase
+                if res == "" and healthbar[0].isdigit():  # Own HP Testcase
                     health = utils.convert_string_to_integer(healthbar[0])
                 testcase.assertEqual(health, data["players"][res])
 

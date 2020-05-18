@@ -93,6 +93,6 @@ def parse_state(img, gameBoard, gameTracker, gameHandler):
             return
         gameHandler.queue_shop_task(img, gameBoard, stage)
 
-    if gameTracker.hasStageChanged(stage):
+    if gameTracker.hasStageChanged(stage) or timer % 5 == 0:
         gameHandler.queue_healthbars_task(img, gameBoard, stage)
 

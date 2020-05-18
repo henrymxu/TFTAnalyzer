@@ -35,13 +35,16 @@ def mouseStuff():
     #     continue
     pass
 
+def get_time():
+    return time.time()
+
 
 def start_timer():
     return time.time()
 
 
 def end_timer(start):
-    diff = int(time.time() - start)
+    diff = (time.time() - start)
     return diff
 
 
@@ -70,6 +73,12 @@ def delete_json_file(file):
 
 def exit_with_error(string):
     sys.exit(string)
+
+
+def generate_file_name():
+    import time
+    ts = time.time()
+    return "{}.json".format(str(int(ts)))
 
 
 def generate_random_window_title():

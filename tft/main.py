@@ -1,10 +1,4 @@
-from tft import tracker, game, handler
-
-
-def generate_file_name():
-    import time
-    ts = time.time()
-    return "test/{}.json".format(str(int(ts)))
+from tft import tracker, game, handler, utils
 
 
 def main(gameWindow, gameDebugger=None, file_name=None):
@@ -39,5 +33,5 @@ def main(gameWindow, gameDebugger=None, file_name=None):
 
 if __name__ == "__main__":
     gameWindow = game.wait_for_window_to_appear()
-    file_name = generate_file_name()
+    file_name = f"test/{utils.generate_file_name()}"
     main(gameWindow, file_name=file_name)

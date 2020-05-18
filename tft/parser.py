@@ -23,7 +23,8 @@ def parse_level(img, debug=None):
 def parse_shop(imgs, debug=None):
     shop = []
     for img in imgs:
-        shop.append(_parse_image_for_text(img, '--psm 7', 1, debug, debugger.ParseShop))
+        shop.append(_parse_image_for_text(img, '--psm 7 -c load_system_dawg=false -c load_freq_dawg=false', 5, debug,
+                                          debugger.ParseShop))
     return shop
 
 
@@ -51,7 +52,7 @@ def parse_healthbars_legacy(top_to_bottom, bottom_to_top, debug=None):
     for img in [top_to_bottom, bottom_to_top]:
         for player in range(0, 8):
             name_config = '--psm 7 --oem 3'
-            health_config = '--psm 7 -c tessedit_char_whitelist=1234567890'
+            health_config = '--psm 7 -c tessedit_char_whitelist=1234567890 -c load_system_dawg=false -c load_freq_dawg=false'
             name = _parse_image_for_text(img[0][player], name_config, 1, debug, debugger.ParseHealthbars)
             health = utils.convert_string_to_integer(
                 _parse_image_for_text(img[1][player], health_config, 1, debug, debugger.ParseHealthbars))
@@ -76,7 +77,8 @@ def parse_players(imgs, debug=None):
     players = []
     blank_count = 0  # TODO: Improve this logic, kinda unclear
     for img in imgs:
-        possible_player = _parse_image_for_text(img, '--psm 7', 3, debug, debugger.ParsePlayers)
+        possible_player = _parse_image_for_text(img, '--psm 7 -c load_system_dawg=false -c load_freq_dawg=false', 3,
+                                                debug, debugger.ParsePlayers)
         if possible_player:
             player = possible_player
         else:
@@ -93,8 +95,8 @@ def parse_healthbar_circles(imgs, debug=None):
     circle_points = []
     for img in imgs:
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        blur = cv2.GaussianBlur(gray, (7, 7), 0)
-        ret, thresh1 = cv2.threshold(blur, 65, 255, cv2.THRESH_BINARY)
+        # blur = cv2.GaussianBlur(gray, (7, 7), 0)
+        ret, thresh1 = cv2.threshold(gray, 65, 255, cv2.THRESH_BINARY)
         circles = cv2.HoughCircles(thresh1, cv2.HOUGH_GRADIENT, 2.0, 400)
 
         if circles is not None:
@@ -104,6 +106,8 @@ def parse_healthbar_circles(imgs, debug=None):
                 if debug is not None:
                     cv2.circle(img, (x, y), r, (127, 255, 127), 4)
                     cv2.rectangle(img, (x - 5, y - 5), (x + 5, y + 5), (0, 128, 255), -1)
+        else:
+            circle_points.append(None)
         if debug is not None:
             debug.add_window(img, f"circles-{utils.generate_random_window_title()}", debugger.ParseCircles)
     return circle_points
@@ -118,14 +122,14 @@ def parse_healthbars(imgs, debug=None):
     :return: list of tuples containing (name, health)
     """
     healthbars = []
-    for player in range(0, 8):
+    for player in list(zip(imgs[0], imgs[1])):
         name_config = '--psm 7 --oem 3'
         health_config = '--psm 7 -c tessedit_char_whitelist=1234567890'
         name = ""
-        if imgs[0][player] is not None:
-            name = _parse_image_for_text(imgs[0][player], name_config, 1, debug, debugger.ParseHealthbars)
+        if player[0] is not None:
+            name = _parse_image_for_text(player[0], name_config, 1, debug, debugger.ParseHealthbars)
         health = utils.convert_string_to_integer(
-            _parse_image_for_text(imgs[1][player], health_config, 4, debug, debugger.ParseHealthbars))
+            _parse_image_for_text(player[1], health_config, 4, debug, debugger.ParseHealthbars))
         if health != -1:
             healthbars.append((name, int(health)))
         else:
@@ -157,7 +161,7 @@ def _parse_image_for_text(img, config, pre_process, debug=None, caller=""):
 def _pre_process_image(img, mode):
     if mode == 0:
         return img
-    if mode == 4:
+    if mode == 4:  # For parsing circles
         frame_HSV = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         img_processed = cv2.inRange(frame_HSV, (0, 0, 127), (180, 100, 255))
         kernel = np.ones((1, 1), np.uint8)
@@ -170,6 +174,10 @@ def _pre_process_image(img, mode):
         mask = cv2.inRange(img, lower_red, upper_red)
         img_masked = cv2.bitwise_and(img, img, mask=mask)
     gray = cv2.cvtColor(img_masked, cv2.COLOR_RGB2GRAY)
-    thresh_target = 127 if mode != 3 else 80
+    thresh_target = 127
+    if mode == 3:  # For player names in loading screen (enables parsing of yellow text)
+        thresh_target = 80
+    elif mode == 5:  # For 5 cost units in shop (removes black blobs created from the white shine)
+        thresh_target = 175
     ret, thresh1 = cv2.threshold(gray, thresh_target, 255, cv2.THRESH_BINARY)
     return cv2.inRange(thresh1, 0, 0)

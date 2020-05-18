@@ -27,22 +27,25 @@ def draw_shape(img, vertices):
 
 
 def crop_shape(img, vertex, scale_percent=100):
+    if vertex is None:
+        return None
     ref_point = vertex
     crop_img = img[ref_point[1][1] + 2:ref_point[2][1], ref_point[0][0] + 2:ref_point[1][0]]
     if scale_percent != 100:
         width = int(crop_img.shape[1] * scale_percent / 100)
         height = int(crop_img.shape[0] * scale_percent / 100)
         dim = (width, height)
-        return cv2.resize(crop_img, dim)
+        try:
+            return cv2.resize(crop_img, dim)
+        except:
+            print(f"Excpetion {vertex}")
+            return None
     return crop_img
 
 
 def crop_shapes(img, vertices, scale_percent=100):
     imgs = []
     for vertex in vertices:
-        if vertex is None:
-            imgs.append(None)
-            continue
         imgs.append(crop_shape(img, vertex, scale_percent))
     return imgs
 

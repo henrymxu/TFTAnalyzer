@@ -30,7 +30,10 @@ class Tracker:
     def writeToFile(self):
         self.__entry_queue.put({"mode": "finish", "contents": {"stage": "0-0"}})
         self.__process.join()
+        print("Attempting to save to file ...")
+        print(self.__stages.copy())
         if self.__file_name:
+            print("Saving to file")
             utils.append_to_json_array_file(self.__file_name, self.__stages.copy())
 
     def hasStageChanged(self, stage):
@@ -54,42 +57,41 @@ class Tracker:
             stage = data["contents"]["stage"]
             if stage == "0-0":
                 break
+            timestamp = data["timestamp"]
             self.createStageIfNeeded(stage)
             if data["mode"] == "shop":
                 units = data["contents"]["units"]
                 level = data["contents"]["level"]
                 gold = data["contents"]["gold"]
-                self.addShop(stage, units, level, gold)
+                self.addShop(stage, units, level, gold, timestamp)
             elif data["mode"] == "healthbars":
                 healthbars = data["contents"]["healthbars"]
-                self.addHealthbars(stage, healthbars)
+                self.addHealthbars(stage, healthbars, timestamp)
 
-    def addHealthbars(self, stage, healthbars):
-        if self.__players:
-            players = {}
-            for player, health in healthbars:
-                matched_player = utils.find_matching_string_in_list(player, self.__players, 80)
-                if matched_player == "" and player.isdigit():
-                    players[""] = player
-                players[matched_player] = health
-        else: # Should never happen
-            players = dict(healthbars)
+    def addHealthbars(self, stage, healthbars, timestamp):
+        players = {}
+        for player, health in healthbars:
+            matched_player = utils.find_matching_string_in_list(player, self.__players, 70)
+            if matched_player == "" and player.isdigit():
+                players[""] = player
+            players[matched_player] = health
         temp_dict = self.__stages[stage].copy()
         temp_dict["players"].append(players)
         self.__stages[stage] = temp_dict
 
-    def addShop(self, stage, units, level, gold):
+    def addShop(self, stage, units, level, gold, timestamp=0):
         """
         Add a shop to the tracker if has yet to be added, along with the current level and gold amount.
 
-        :param units: list of un-processed units
         :param stage:
+        :param units: list of un-processed units
         :param level:
         :param gold:
+        :param timestamp:
         :return: boolean
         """
         units = [utils.find_matching_string_in_list(i, self.__unitLookupTable, 75) for i in units]
-        shop = _create_shop(units, level, gold)
+        shop = _create_shop(units, level, gold, timestamp)
         temp_dict = self.__stages[stage].copy()
         temp_dict["shops"].append(shop)
         self.__stages[stage] = temp_dict
@@ -97,15 +99,11 @@ class Tracker:
     def createStageIfNeeded(self, stage):
         if stage in self.__stages:
             return
-        self.__stages[stage] = {"shops": [], "healthbars": []}
+        self.__stages[stage] = {"shops": [], "players": []}
 
 
-def _create_shop(units, level, gold):
-    return {"units": units, "level": level, "gold": gold}
-
-
-def _create_stage(stage, healthbars, level, gold):
-    return {"stage": stage, "healthbars": healthbars, "level": level, "gold": gold, "shops": []}
+def _create_shop(units, level, gold, timestamp):
+    return {"units": units, "level": level, "gold": gold, "timestamp": timestamp}
 
 
 def initialize_unit_lookup_table():

@@ -6,7 +6,7 @@
     ],
     "scaling": {
       "healthbar_name": 250,
-      "healthbar_value": 250
+      "healthbar_value": 200
     },
     "contents": {
       "stage": {
@@ -132,13 +132,13 @@
       },
       "timer": {
         "x": 1512,
-        "y": 15,
+        "y": 14,
         "width": 45,
         "height": 30
       },
       "timer_early": {
         "x": 1440,
-        "y": 15,
+        "y": 14,
         "width": 45,
         "height": 30
       },
