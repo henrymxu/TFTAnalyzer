@@ -1,4 +1,4 @@
-from tft import tracker, game, handler, utils
+from tft import tracker, game, handler
 
 
 def main(gameWindow, gameDebugger=None, file_name=None):
@@ -29,9 +29,3 @@ def main(gameWindow, gameDebugger=None, file_name=None):
     gameTracker.writeToFile()
 
     # TODO: Implement cleaner and analyzer for file
-
-
-if __name__ == "__main__":
-    gameWindow = game.wait_for_window_to_appear()
-    file_name = f"test/{utils.generate_file_name()}"
-    main(gameWindow, file_name=file_name)

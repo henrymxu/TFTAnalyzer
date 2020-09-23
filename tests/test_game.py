@@ -4,8 +4,8 @@ import unittest
 from tests import initialize_screenshot, initialize_video
 from tft import game, tracker, main, handler, debugger, utils
 
-Test1080PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_10.png"
-Test1440PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/Screenshot_15.png"
+Test1080PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/board_1080_1.png"
+Test1440PDefaultScreenshot = "/Users/henry/Downloads/TFT Screenshots/board_1440_5.png"
 
 Test1080PDefaultRecording = "/Users/henry/Downloads/TFT Screenshots/video_1080_3_short_3.mp4"
 Test1440PDefaultRecording = "/Users/henry/Downloads/TFT Screenshots/video_1440_3.mkv"

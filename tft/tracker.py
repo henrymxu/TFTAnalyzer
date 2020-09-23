@@ -113,7 +113,7 @@ def initialize_unit_lookup_table():
     :return:
     """
     unit_lookup_table = []
-    json = utils.open_json_file("data/champions_set4.json")
+    json = utils.open_json_file("data/champions_set3.json")
     for unit in json:
         key = "name"  # Set 3/4 key
         if key not in unit:

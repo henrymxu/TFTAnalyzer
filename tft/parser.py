@@ -155,7 +155,7 @@ def _parse_image_for_text(img, config, pre_process, debug=None, caller=""):
     text = pytesseract.image_to_string(img_processed, lang='eng', config=config)
     if debug:
         debug.add_window(img_processed, f"{text}-{utils.generate_random_window_title()}", caller)
-    return text
+    return text.strip()
 
 
 def _pre_process_image(img, mode):

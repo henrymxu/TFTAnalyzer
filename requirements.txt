@@ -1,5 +1,5 @@
 pyautogui
-win32gui
+pywin32
 fuzzywuzzy
 pytesseract
 opencv-python
