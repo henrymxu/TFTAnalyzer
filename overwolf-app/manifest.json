@@ -1,0 +1,40 @@
+{
+  "manifest_version": "1",
+  "type": "WebApp",
+  "meta": {
+    "name": "TFT Game Events Proxy",
+    "version": "0.1.0",
+    "minimum-overwolf-version": "0.245.0.0",
+    "author": "TFTAnalyzer",
+    "icon": "icon.png",
+    "icon_gray": "icon_gray.png",
+    "description": "Forwards raw TFT Game Events (GEP) data to a local file for an external, non-Overwolf application to consume. Read-only: does not send input to the game."
+  },
+  "permissions": ["GameInfo", "FileSystem"],
+  "data": {
+    "start_window": "background",
+
+    "game_targeting": {
+      "type": "dedicated",
+      "game_ids": [5426, 21570]
+    },
+    "game_events": [5426, 21570],
+
+    "windows": {
+      "background": {
+        "file": "background.html",
+        "is_background_page": true
+      }
+    },
+
+    "launch_events": [
+      {
+        "event": "GameLaunch",
+        "event_data": {
+          "game_ids": [5426, 21570]
+        },
+        "start_minimized": true
+      }
+    ]
+  }
+}

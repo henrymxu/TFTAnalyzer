@@ -147,5 +147,4 @@ test/*.json
 # TFTAnalyzer runtime data
 .tft_cache/
 regions.local.json
-*.png
-!docs/**/*.png
+data/templates/

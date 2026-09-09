@@ -2,13 +2,17 @@
 
 A read-only, programmatic interface to Teamfight Tactics data, meant as the
 "senses" layer for building analysis tools or, eventually, a decision-making
-AI. It has two independent pieces:
+AI. It has three independent pieces:
 
 1. **`tft.riot_api`** - a client for the official [Riot Games API](https://developer.riotgames.com/):
    account lookup, ranked stats, and match history. Fully within Riot's ToS.
 2. **`tft.vision`** - an optional local screen reader (screen capture + OCR +
    template matching) that reconstructs *your own* live in-match state (gold,
    level, shop, board) by reading pixels off your screen.
+3. **`overwolf-app/` + `tft.overwolf_bridge`** - an optional Overwolf app that
+   proxies Overwolf's own live TFT Game Events feed (board/bench/shop/augments/etc,
+   richer than what vision or the Riot API can see) to a local JSON file, plus a
+   Python reader for it. See `overwolf-app/README.md`.
 
 **There is no code anywhere in this repo that sends input to the game** - no
 mouse movement, no key presses, no memory injection. `tft.vision` only reads;
@@ -83,16 +87,39 @@ quality - this is a best-effort computer-vision pipeline, not a guaranteed
 readout, and shop/board recognition will need retemplating each time a new
 set changes champion art.
 
+## Overwolf game events (optional, richest live data)
+
+Riot's own API has no live in-match data, and screen-reading is inherently
+approximate. [Overwolf](https://www.overwolf.com/) maintains its own TFT
+integration (board, bench, shop, augments, roster - see `overwolf-app/README.md`
+for the full feature list) that's much more complete, but it's only exposed to
+apps built on their platform. `overwolf-app/` is a minimal, headless Overwolf
+app that subscribes to everything TFT's GEP integration offers and writes it
+to a local JSON file; `tft.overwolf_bridge` reads that file from plain Python.
+
+```bash
+# One-time: load overwolf-app/ as an unpacked app in Overwolf's dev tools
+# (see overwolf-app/README.md), then with TFT running:
+python -m examples.overwolf_events_example
+```
+
+This still isn't fully verified end-to-end against a live game (I don't have
+one to test against) - see the "best-effort" note in `overwolf-app/README.md`
+about the one spot (output path resolution) that may need a manual fix
+depending on your Overwolf client version.
+
 ## Project layout
 
 ```
 tft/
-  riot_api/       Riot API client, rate limiting, exceptions
-  static_data/    Community Dragon set data (champions/traits/items) + icon downloads
-  models/         Typed dataclasses for match history and live game state
-  vision/         Screen capture, OCR, template matching, live state reader
-  interface.py    TFTInterface - the top-level facade
-tools/            One-off scripts: calibrate_regions.py, fetch_templates.py
+  riot_api/          Riot API client, rate limiting, exceptions
+  static_data/       Community Dragon set data (champions/traits/items) + icon downloads
+  models/            Typed dataclasses for match history and live game state
+  vision/            Screen capture, OCR, template matching, live state reader
+  overwolf_bridge.py Reader for the Overwolf proxy app's event file
+  interface.py       TFTInterface - the top-level facade
+overwolf-app/     Headless Overwolf app that proxies TFT Game Events to a JSON file
+tools/            One-off scripts: calibrate_regions.py, fetch_templates.py, debug_capture.py
 examples/         Runnable usage examples
 tests/            Unit tests (mocked network, synthetic images - no live game needed)
 ```
