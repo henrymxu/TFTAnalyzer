@@ -58,8 +58,16 @@ per machine:
 ```bash
 python -m tools.fetch_templates       # downloads champion icons for shop recognition
 python -m tools.calibrate_regions     # draw boxes around gold/level/shop/etc on your screen
+python -m tools.debug_capture         # sanity-check: saves each region as a PNG + prints raw OCR text
 python -m examples.live_state_example # prints a read-only snapshot once per second
 ```
+
+If a value comes back wrong or `None`, run `tools.debug_capture` first - it saves
+exactly what was captured for each region to `.tft_cache/debug_captures/*.png`
+and prints the raw OCR text before parsing, which is almost always faster
+than guessing from `live_state_example`'s output alone. Common fixes: redraw
+the region tighter around just the digits/icon, or increase your UI scale so
+small text isn't too blurry for OCR.
 
 ```python
 from tft import TFTInterface
