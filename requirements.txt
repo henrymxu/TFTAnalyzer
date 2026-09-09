@@ -1,7 +1,7 @@
-pyautogui
-pywin32
-fuzzywuzzy
-pytesseract
-opencv-python
-Pillow
-numpy
+requests>=2.31
+python-dotenv>=1.0
+mss>=9.0
+opencv-python-headless>=4.9
+pytesseract>=0.3.10
+numpy>=1.26
+Pillow>=10.0
