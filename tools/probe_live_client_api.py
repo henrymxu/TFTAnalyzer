@@ -32,17 +32,32 @@ POLL_INTERVAL_SECONDS = 5
 OUTPUT_DIR = Path("live_client_probe_output")
 
 
-def fetch_all_game_data() -> dict | None:
+def fetch_all_game_data() -> tuple[dict | None, str | None]:
+    """Returns (data, error). error is a human-readable reason when data is
+    None, so "not in a match" and "something is actually broken" don't look
+    identical - a system/VPN proxy intercepting this localhost call is a
+    common cause of the latter, which is why proxies are explicitly
+    disabled for this one request regardless of environment settings."""
     try:
-        response = requests.get(f"{BASE_URL}/allgamedata", verify=False, timeout=3)
-    except requests.exceptions.RequestException:
-        return None
+        response = requests.get(
+            f"{BASE_URL}/allgamedata",
+            verify=False,
+            timeout=3,
+            proxies={"http": None, "https": None},
+        )
+    except requests.exceptions.SSLError as e:
+        return None, f"SSL error ({e}) - unusual for this endpoint, please report this"
+    except requests.exceptions.ConnectionError as e:
+        return None, f"connection refused/reset ({e}) - normal if not currently in a match"
+    except requests.exceptions.RequestException as e:
+        return None, f"request failed: {e}"
+
     if response.status_code != 200:
-        return None
+        return None, f"HTTP {response.status_code}: {response.text[:200]!r}"
     try:
-        return response.json()
-    except ValueError:
-        return None
+        return response.json(), None
+    except ValueError as e:
+        return None, f"response wasn't valid JSON: {e}"
 
 
 def summarize(sample: dict) -> str:
@@ -73,9 +88,9 @@ def main() -> None:
 
     try:
         while True:
-            data = fetch_all_game_data()
+            data, error = fetch_all_game_data()
             if data is None:
-                print("(not in a match yet - waiting...)")
+                print(f"(no data yet: {error})")
                 time.sleep(POLL_INTERVAL_SECONDS)
                 continue
 
