@@ -5,3 +5,4 @@ opencv-python-headless>=4.9
 pytesseract>=0.3.10
 numpy>=1.26
 Pillow>=10.0
+aiohttp>=3.9

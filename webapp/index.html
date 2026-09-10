@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>TFT Events Dashboard</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2e38;
+    --text: #e6e8ec;
+    --muted: #8b909c;
+    --accent: #4da3ff;
+    --good: #3ecf8e;
+    --bad: #ff5d5d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--bad); flex-shrink: 0; }
+  .dot.connected { background: var(--good); }
+  #status-text { color: var(--muted); font-size: 13px; }
+
+  .stat-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    min-width: 80px;
+  }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat .value { font-size: 20px; font-weight: 600; }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+  }
+  .pane { background: var(--bg); padding: 16px; min-width: 0; }
+  .pane h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 12px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .card .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .card .feature-name { font-weight: 600; font-size: 13px; }
+  .card .ts { font-size: 11px; color: var(--muted); }
+  .card pre {
+    margin: 0;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #c9cdd6;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+
+  .slots { display: flex; flex-wrap: wrap; gap: 8px; }
+  .slot {
+    background: #1e222c;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  #log {
+    height: 70vh;
+    overflow-y: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  .log-entry { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .log-entry .meta { color: var(--muted); }
+  .kind-event { color: var(--accent); }
+  .kind-info_update { color: var(--good); }
+  .kind-error { color: var(--bad); }
+  .log-entry pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; color: #c9cdd6; }
+
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+  .note {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 8px 16px 16px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="dot" id="status-dot"></div>
+    <h1>TFT Events Dashboard</h1>
+    <span id="status-text">connecting...</span>
+  </header>
+
+  <div class="stat-strip" id="stat-strip"></div>
+
+  <main>
+    <section class="pane">
+      <h2>Recreated state (best effort)</h2>
+      <div id="feature-cards"><div class="empty">No events yet - waiting on the Overwolf proxy app.</div></div>
+    </section>
+    <section class="pane">
+      <h2>Raw event log</h2>
+      <div id="log"><div class="empty">No events yet.</div></div>
+    </section>
+  </main>
+
+  <p class="note">
+    "Recreated state" reads whatever field names TFT's Game Events actually
+    send and displays them generically - the stat strip and shop/board
+    slots above are best-effort guesses at common key names (gold, level,
+    health, name, etc.) and will just show raw JSON if those guesses don't
+    match. The raw event log on the right is always accurate: it's exactly
+    what the Overwolf app streamed, unmodified.
+  </p>
+
+<script>
+(function () {
+  "use strict";
+
+  var MAX_LOG_ENTRIES = 500;
+  var FEATURE_ORDER = [
+    "me", "roster", "store", "board", "bench", "augments",
+    "match_info", "game_info", "counters", "carousel", "live_client_data",
+  ];
+  var STAT_KEYS = ["gold", "level", "health", "hp", "round", "stage"];
+
+  var logEl = document.getElementById("log");
+  var cardsEl = document.getElementById("feature-cards");
+  var statStripEl = document.getElementById("stat-strip");
+  var statusDot = document.getElementById("status-dot");
+  var statusText = document.getElementById("status-text");
+
+  var latestByFeature = {}; // feature name -> { ts, value }
+  var logEntries = [];
+
+  // GEP payloads frequently carry JSON as a *string* nested inside the
+  // object (e.g. {"info":{"match_info":{"round_outcome":"{\"a\":1}"}}}).
+  // Recursively parsing any string that looks like JSON makes those
+  // readable instead of showing an escaped blob.
+  function deepParse(value, depth) {
+    if (depth > 6) return value;
+    if (typeof value === "string") {
+      var trimmed = value.trim();
+      if ((trimmed[0] === "{" || trimmed[0] === "[") && trimmed.length > 1) {
+        try {
+          return deepParse(JSON.parse(trimmed), depth + 1);
+        } catch (e) {
+          return value;
+        }
+      }
+      return value;
+    }
+    if (Array.isArray(value)) {
+      return value.map(function (v) { return deepParse(v, depth + 1); });
+    }
+    if (value && typeof value === "object") {
+      var out = {};
+      for (var k in value) {
+        if (Object.prototype.hasOwnProperty.call(value, k)) {
+          out[k] = deepParse(value[k], depth + 1);
+        }
+      }
+      return out;
+    }
+    return value;
+  }
+
+  function extractFeatureName(payload) {
+    if (!payload) return null;
+    if (typeof payload.feature === "string") return payload.feature;
+    if (payload.info && typeof payload.info === "object") {
+      var keys = Object.keys(payload.info);
+      if (keys.length) return keys[0];
+    }
+    return null;
+  }
+
+  // Best-effort: hunt for a small set of common key names anywhere in a
+  // (small) object tree. Returns the first match found, case-insensitive.
+  function findFirstKey(value, keys, depth) {
+    if (depth > 4 || value == null) return undefined;
+    if (typeof value === "object") {
+      for (var k in value) {
+        if (!Object.prototype.hasOwnProperty.call(value, k)) continue;
+        if (keys.indexOf(k.toLowerCase()) !== -1) return value[k];
+      }
+      for (var k2 in value) {
+        if (!Object.prototype.hasOwnProperty.call(value, k2)) continue;
+        var found = findFirstKey(value[k2], keys, depth + 1);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
+  }
+
+  function guessSlotLabel(item) {
+    if (item == null) return "?";
+    if (typeof item === "string" || typeof item === "number") return String(item);
+    var nameKeys = ["name", "character_id", "unit_id", "championid", "id"];
+    var found = findFirstKey(item, nameKeys, 0);
+    return found !== undefined ? String(found) : JSON.stringify(item).slice(0, 24);
+  }
+
+  function renderStatStrip() {
+    var meCard = latestByFeature["me"];
+    var matchCard = latestByFeature["match_info"];
+    var stats = [];
+
+    if (meCard) {
+      ["gold", "level", "health"].forEach(function (key) {
+        var v = findFirstKey(meCard.value, [key], 0);
+        if (v !== undefined) stats.push({ label: key, value: v });
+      });
+    }
+    if (matchCard) {
+      var round = findFirstKey(matchCard.value, ["round", "stage_and_round"], 0);
+      if (round !== undefined) stats.push({ label: "round", value: round });
+    }
+
+    if (!stats.length) {
+      statStripEl.innerHTML = '<div class="empty">No recognizable gold/level/health/round fields yet.</div>';
+      return;
+    }
+    statStripEl.innerHTML = stats.map(function (s) {
+      return '<div class="stat"><div class="label">' + escapeHtml(s.label) +
+        '</div><div class="value">' + escapeHtml(String(s.value)) + "</div></div>";
+    }).join("");
+  }
+
+  function renderSlots(value) {
+    var items = Array.isArray(value) ? value : null;
+    if (!items) {
+      // Sometimes the array is nested one level down (e.g. { slots: [...] }).
+      if (value && typeof value === "object") {
+        for (var k in value) {
+          if (Array.isArray(value[k])) { items = value[k]; break; }
+        }
+      }
+    }
+    if (!items || !items.length) return null;
+    return '<div class="slots">' + items.map(function (item) {
+      return '<div class="slot">' + escapeHtml(guessSlotLabel(item)) + "</div>";
+    }).join("") + "</div>";
+  }
+
+  function renderFeatureCards() {
+    var names = Object.keys(latestByFeature);
+    if (!names.length) {
+      cardsEl.innerHTML = '<div class="empty">No events yet - waiting on the Overwolf proxy app.</div>';
+      return;
+    }
+    names.sort(function (a, b) {
+      var ia = FEATURE_ORDER.indexOf(a), ib = FEATURE_ORDER.indexOf(b);
+      if (ia === -1) ia = 999;
+      if (ib === -1) ib = 999;
+      return ia - ib;
+    });
+
+    cardsEl.innerHTML = names.map(function (name) {
+      var entry = latestByFeature[name];
+      var slotsHtml = (name === "store" || name === "board" || name === "bench")
+        ? renderSlots(entry.value)
+        : null;
+      var body = slotsHtml || ("<pre>" + escapeHtml(JSON.stringify(entry.value, null, 2)) + "</pre>");
+      return '<div class="card"><div class="card-head"><span class="feature-name">' +
+        escapeHtml(name) + '</span><span class="ts">' + formatTime(entry.ts) +
+        "</span></div>" + body + "</div>";
+    }).join("");
+  }
+
+  function appendLogEntry(entry) {
+    logEntries.push(entry);
+    if (logEntries.length > MAX_LOG_ENTRIES) logEntries.shift();
+
+    var div = document.createElement("div");
+    div.className = "log-entry";
+    div.innerHTML = '<span class="meta">#' + entry.seq + " " + formatTime(entry.ts) +
+      '</span> <span class="kind-' + escapeHtml(entry.kind) + '">[' + escapeHtml(entry.kind) + "]</span>" +
+      "<pre>" + escapeHtml(JSON.stringify(entry.payload)) + "</pre>";
+
+    var wasEmpty = logEl.querySelector(".empty");
+    if (wasEmpty) logEl.innerHTML = "";
+    logEl.appendChild(div);
+    while (logEl.children.length > MAX_LOG_ENTRIES) {
+      logEl.removeChild(logEl.firstChild);
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function handleEntry(entry) {
+    appendLogEntry(entry);
+
+    var parsedPayload = deepParse(entry.payload, 0);
+    var featureName = extractFeatureName(parsedPayload);
+    if (featureName) {
+      var value = (parsedPayload.info && parsedPayload.info[featureName] !== undefined)
+        ? parsedPayload.info[featureName]
+        : parsedPayload;
+      latestByFeature[featureName] = { ts: entry.ts, value: deepParse(value, 0) };
+    }
+
+    renderFeatureCards();
+    renderStatStrip();
+  }
+
+  function formatTime(ms) {
+    var d = new Date(ms);
+    return d.toLocaleTimeString();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function setStatus(connected, text) {
+    statusDot.className = "dot" + (connected ? " connected" : "");
+    statusText.textContent = text;
+  }
+
+  function connect() {
+    var url = "ws://" + location.host + "/ws";
+    var socket;
+    try {
+      socket = new WebSocket(url);
+    } catch (e) {
+      setStatus(false, "failed to open socket, retrying...");
+      setTimeout(connect, 3000);
+      return;
+    }
+
+    socket.onopen = function () { setStatus(true, "connected"); };
+    socket.onclose = function () {
+      setStatus(false, "disconnected, retrying...");
+      setTimeout(connect, 3000);
+    };
+    socket.onerror = function () { /* onclose follows */ };
+    socket.onmessage = function (evt) {
+      try {
+        handleEntry(JSON.parse(evt.data));
+      } catch (e) {
+        console.error("bad message", e, evt.data);
+      }
+    };
+  }
+
+  connect();
+})();
+</script>
+</body>
+</html>

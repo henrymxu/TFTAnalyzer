@@ -94,19 +94,40 @@ approximate. [Overwolf](https://www.overwolf.com/) maintains its own TFT
 integration (board, bench, shop, augments, roster - see `overwolf-app/README.md`
 for the full feature list) that's much more complete, but it's only exposed to
 apps built on their platform. `overwolf-app/` is a minimal, headless Overwolf
-app that subscribes to everything TFT's GEP integration offers and writes it
-to a local JSON file; `tft.overwolf_bridge` reads that file from plain Python.
+app that subscribes to everything TFT's GEP integration offers, and gives you
+two ways to consume it:
+
+1. **File** - every entry is written to a local JSON file;
+   `tft.overwolf_bridge` reads that from plain Python (`examples/overwolf_events_example.py`).
+2. **Live stream** - every entry is also pushed over a WebSocket to
+   `tft/overwolf_server.py`, a small relay server that re-broadcasts it to
+   `webapp/index.html`, a browser dashboard with a raw event log and a
+   best-effort "recreated state" view (gold/level/health, shop/board/bench
+   slots) parsed generically from whatever fields TFT's events actually send.
 
 ```bash
+# Terminal 1: the relay server + dashboard
+python -m tft.overwolf_server
+# open http://localhost:8765/ in a browser
+
 # One-time: load overwolf-app/ as an unpacked app in Overwolf's dev tools
-# (see overwolf-app/README.md), then with TFT running:
+# (see overwolf-app/README.md), then with TFT running, both the file and
+# the dashboard above should start filling in. Or, without a browser:
 python -m examples.overwolf_events_example
 ```
 
-This still isn't fully verified end-to-end against a live game (I don't have
-one to test against) - see the "best-effort" note in `overwolf-app/README.md`
-about the one spot (output path resolution) that may need a manual fix
-depending on your Overwolf client version.
+The relay server + dashboard (`tft/overwolf_server.py`, `webapp/index.html`)
+are tested end-to-end here, including a real headless-browser run against
+sample payloads shaped like TFT's actual `match_info`/`me` events - the
+server, the streaming protocol, and the dashboard's rendering logic all
+work. What is **not** verified against a live game (no TFT/Overwolf install
+available here) is the Overwolf app itself producing that stream in the
+first place - see the "best-effort" notes in `overwolf-app/README.md` about
+the two spots (output path resolution, TFT's current game id) that may need
+a manual fix depending on your Overwolf client version. The "recreated
+state" panel's gold/level/shop guesses are also best-effort until tested
+against real payloads - it'll show raw JSON instead of a clean readout for
+anything it doesn't recognize.
 
 ## Project layout
 
@@ -117,11 +138,13 @@ tft/
   models/            Typed dataclasses for match history and live game state
   vision/            Screen capture, OCR, template matching, live state reader
   overwolf_bridge.py Reader for the Overwolf proxy app's event file
+  overwolf_server.py Relay server: Overwolf app's WebSocket stream -> browser dashboard
   interface.py       TFTInterface - the top-level facade
-overwolf-app/     Headless Overwolf app that proxies TFT Game Events to a JSON file
+overwolf-app/     Headless Overwolf app that proxies TFT Game Events (file + WebSocket)
+webapp/           Browser dashboard served by tft.overwolf_server
 tools/            One-off scripts: calibrate_regions.py, fetch_templates.py, debug_capture.py
 examples/         Runnable usage examples
-tests/            Unit tests (mocked network, synthetic images - no live game needed)
+tests/            Unit tests (mocked network, synthetic images, in-process server - no live game needed)
 ```
 
 ## Running tests

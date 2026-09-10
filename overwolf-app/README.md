@@ -1,10 +1,11 @@
 # TFT Game Events Proxy (Overwolf app)
 
 A minimal, headless Overwolf app that subscribes to every documented TFT
-Game Events (GEP) feature and writes the raw stream to a local JSON file.
-It has no window, no UI, and does not send any input to the game - it's
-purely a bridge so a completely separate application (this repo's Python
-package, or anything else) can consume live TFT match data without
+Game Events (GEP) feature and both (a) writes the raw stream to a local
+JSON file and (b) streams it live over a plain WebSocket. It has no window,
+no UI, and does not send any input to the game - it's purely a bridge so a
+completely separate application (this repo's Python package, a browser
+dashboard, or anything else) can consume live TFT match data without
 reimplementing Overwolf's game integration itself.
 
 ## Why this exists
@@ -47,6 +48,23 @@ Each entry looks like:
 A consumer (see `../examples/overwolf_events_example.py` and
 `../tft/overwolf_bridge.py`) just polls/reads that file - no Overwolf SDK,
 no special permissions, nothing game-specific required on that side.
+
+## Live streaming (the webapp dashboard)
+
+Independently of the file above, every entry is also pushed out over a
+plain `WebSocket` (deliberately the native browser API, not
+`overwolf.web.createWebSocket` - Overwolf's own docs recommend the native
+one unless you need to bypass TLS cert checks for a `wss://` server, which
+doesn't apply here) to `ws://localhost:8765/ws`. That's the address of
+`tft/overwolf_server.py` (see the main README) - a small relay + static
+file server this repo also provides, which re-broadcasts whatever it
+receives to any connected browser tab running `webapp/index.html`.
+
+This is a best-effort, live-only tap: if `tft.overwolf_server` isn't
+running yet, or briefly drops, `background.js` just retries the connection
+every 3 seconds and silently drops anything that couldn't be sent in the
+meantime - `events.json` above is unaffected and remains the complete,
+durable record regardless of whether anything was ever streamed live.
 
 **One spot here is best-effort, not verified**: resolving the Documents
 folder path relies on `overwolf.io.paths.documents` existing on your

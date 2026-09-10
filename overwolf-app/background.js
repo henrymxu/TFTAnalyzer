@@ -43,10 +43,19 @@ var OUTPUT_SUBPATH = "TFTEventsProxy\\events.json";
 var MAX_BUFFER_ENTRIES = 5000;
 var WRITE_DEBOUNCE_MS = 200;
 
+// Live streaming target. Deliberately a *native* browser WebSocket, not
+// overwolf.web.createWebSocket - Overwolf's own docs say to prefer the
+// native one unless you need to bypass TLS cert checks for a wss://
+// localhost server (e.g. League's LCU), which doesn't apply to our own
+// plain ws:// relay server (tft/overwolf_server.py).
+var WS_URL = "ws://localhost:8765/ws";
+var WS_RECONNECT_DELAY_MS = 3000;
+
 var g_buffer = [];
 var g_nextSeq = 1;
 var g_writeTimer = null;
 var g_outputPath = null;
+var g_socket = null;
 
 function resolveOutputPath() {
   try {
@@ -66,11 +75,48 @@ function resolveOutputPath() {
 }
 
 function recordEntry(kind, payload) {
-  g_buffer.push({ seq: g_nextSeq++, ts: Date.now(), kind: kind, payload: payload });
+  var entry = { seq: g_nextSeq++, ts: Date.now(), kind: kind, payload: payload };
+  g_buffer.push(entry);
   if (g_buffer.length > MAX_BUFFER_ENTRIES) {
     g_buffer.splice(0, g_buffer.length - MAX_BUFFER_ENTRIES);
   }
   scheduleWrite();
+  streamEntry(entry);
+}
+
+function connectStreamSocket() {
+  try {
+    g_socket = new WebSocket(WS_URL);
+  } catch (e) {
+    console.error("[TFTEventsProxy] Failed to open streaming socket: " + e);
+    window.setTimeout(connectStreamSocket, WS_RECONNECT_DELAY_MS);
+    return;
+  }
+
+  g_socket.onopen = function () {
+    console.log("[TFTEventsProxy] Streaming connected to " + WS_URL);
+  };
+  g_socket.onclose = function () {
+    g_socket = null;
+    window.setTimeout(connectStreamSocket, WS_RECONNECT_DELAY_MS);
+  };
+  g_socket.onerror = function () {
+    // onclose fires right after; reconnect is scheduled there.
+  };
+}
+
+function streamEntry(entry) {
+  // Best-effort, live-only: if nothing is connected (server not running
+  // yet, or a browser tab isn't open), the entry is simply not streamed.
+  // events.json on disk (written above) is the durable record regardless.
+  if (!g_socket || g_socket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+  try {
+    g_socket.send(JSON.stringify(entry));
+  } catch (e) {
+    console.error("[TFTEventsProxy] Failed to stream entry: " + e);
+  }
 }
 
 function scheduleWrite() {
@@ -165,6 +211,8 @@ function start() {
   if (g_outputPath) {
     console.log("[TFTEventsProxy] Writing events to: " + g_outputPath);
   }
+
+  connectStreamSocket();
 
   overwolf.games.onGameInfoUpdated.addListener(function (res) {
     if (gameLaunched(res)) {
