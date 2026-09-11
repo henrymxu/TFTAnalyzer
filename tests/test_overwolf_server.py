@@ -1,6 +1,47 @@
 import json
 
-from tft.overwolf_server import create_app
+from tft.models.champion import Champion
+from tft.models.item import Item
+from tft.overwolf_server import build_name_maps, create_app
+
+
+class _FakeCDragonClient:
+    def get_champions(self):
+        return [Champion(api_name="TFT14_Draven", display_name="Draven", cost=1)]
+
+    def get_items(self):
+        return [Item(api_name="TFT_Item_InfinityEdge", display_name="Infinity Edge")]
+
+
+class _BrokenCDragonClient:
+    def get_champions(self):
+        raise RuntimeError("network down")
+
+    def get_items(self):
+        raise RuntimeError("network down")
+
+
+def test_build_name_maps_lowercases_api_names_as_keys():
+    maps = build_name_maps(client=_FakeCDragonClient())
+
+    assert maps["champions"]["tft14_draven"] == "Draven"
+    assert maps["items"]["tft_item_infinityedge"] == "Infinity Edge"
+
+
+def test_build_name_maps_degrades_gracefully_on_failure():
+    maps = build_name_maps(client=_BrokenCDragonClient())
+
+    assert maps == {"champions": {}, "items": {}}
+
+
+async def test_names_route_serves_built_name_maps(aiohttp_client, mocker):
+    mocker.patch("tft.overwolf_server.build_name_maps", return_value={"champions": {"a": "A"}, "items": {}})
+    client = await aiohttp_client(create_app())
+
+    resp = await client.get("/names.json")
+
+    assert resp.status == 200
+    assert await resp.json() == {"champions": {"a": "A"}, "items": {}}
 
 
 async def test_static_index_is_served(aiohttp_client):
