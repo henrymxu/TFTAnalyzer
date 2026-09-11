@@ -94,8 +94,41 @@
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 12px;
-    min-width: 60px;
+    min-width: 70px;
     text-align: center;
+  }
+  .slot .items { color: var(--muted); font-size: 10px; margin-top: 2px; }
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #1e222c;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  .badge.on { background: rgba(62, 207, 142, 0.15); color: var(--good); }
+
+  .roster-row {
+    display: grid;
+    grid-template-columns: 16px 1fr 60px 50px;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 12px;
+  }
+  .roster-row.me { color: var(--accent); font-weight: 600; }
+  .health-bar { background: #1e222c; border-radius: 4px; height: 8px; overflow: hidden; }
+  .health-bar-fill { height: 100%; background: var(--good); }
+  .health-bar-fill.low { background: var(--bad); }
+
+  .subcard { margin-bottom: 14px; }
+  .subcard h3 {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    display: flex;
+    align-items: center;
   }
 
   #log {
@@ -130,8 +163,8 @@
 
   <main>
     <section class="pane">
-      <h2>Recreated state (best effort)</h2>
-      <div id="feature-cards"><div class="empty">No events yet - waiting on the Overwolf proxy app.</div></div>
+      <h2>Recreated state</h2>
+      <div id="state-sections"><div class="empty">No data yet - waiting on the consumer/proxy bridge.</div></div>
     </section>
     <section class="pane">
       <h2>Raw event log</h2>
@@ -140,168 +173,232 @@
   </main>
 
   <p class="note">
-    "Recreated state" reads whatever field names TFT's Game Events actually
-    send and displays them generically - the stat strip and shop/board
-    slots above are best-effort guesses at common key names (gold, level,
-    health, name, etc.) and will just show raw JSON if those guesses don't
-    match. The raw event log on the right is always accurate: it's exactly
-    what the Overwolf app streamed, unmodified.
+    "Recreated state" is built from the real field names captured from an
+    actual TFT session (game_info.tft_gold, tft_shop, tft_board, tft_bench,
+    tft_roster, tft_item_select, tft_carousel, etc). Anything captured that
+    isn't rendered into a dedicated card yet shows up under "Other live
+    data" as raw JSON, so nothing is silently dropped. The raw event log on
+    the right is always accurate regardless: it's exactly what was
+    streamed, unmodified.
   </p>
 
 <script>
 (function () {
   "use strict";
 
-  var MAX_LOG_ENTRIES = 500;
-  var FEATURE_ORDER = [
-    "me", "roster", "store", "board", "bench", "augments",
-    "match_info", "game_info", "counters", "carousel", "live_client_data",
+  // Real field names, captured from an actual TFT session run through
+  // Overwolf's game-events-sdk `consumer.exe` (see
+  // tft/consumer_log_parser.py). Everything lives under category
+  // "game_info" except plugin lifecycle state.
+  //
+  // Keys already surfaced elsewhere (stat strip or a dedicated card below);
+  // anything else known/unknown falls into "Other live data" instead of
+  // being dropped or duplicated.
+  var DEDICATED_KEYS = [
+    "tft_gold", "tft_xp", "tft_round", "tft_match", "tft_combat", "tft_opp",
+    "tft_shop", "tft_board", "tft_bench", "tft_board_opponent",
+    "tft_roster", "tft_item_select", "tft_carousel", "tft_round_outcome",
   ];
-  var STAT_KEYS = ["gold", "level", "health", "hp", "round", "stage"];
+
+  var MAX_LOG_ENTRIES = 500;
 
   var logEl = document.getElementById("log");
-  var cardsEl = document.getElementById("feature-cards");
+  var stateEl = document.getElementById("state-sections");
   var statStripEl = document.getElementById("stat-strip");
   var statusDot = document.getElementById("status-dot");
   var statusText = document.getElementById("status-text");
 
-  var latestByFeature = {}; // feature name -> { ts, value }
+  var info = {};    // "game_info.tft_gold" -> { ts, value }
+  var events = {};  // event name -> { ts, value }
   var logEntries = [];
 
-  // GEP payloads frequently carry JSON as a *string* nested inside the
-  // object (e.g. {"info":{"match_info":{"round_outcome":"{\"a\":1}"}}}).
-  // Recursively parsing any string that looks like JSON makes those
-  // readable instead of showing an escaped blob.
-  function deepParse(value, depth) {
-    if (depth > 6) return value;
-    if (typeof value === "string") {
-      var trimmed = value.trim();
-      if ((trimmed[0] === "{" || trimmed[0] === "[") && trimmed.length > 1) {
-        try {
-          return deepParse(JSON.parse(trimmed), depth + 1);
-        } catch (e) {
-          return value;
-        }
-      }
-      return value;
-    }
-    if (Array.isArray(value)) {
-      return value.map(function (v) { return deepParse(v, depth + 1); });
-    }
-    if (value && typeof value === "object") {
-      var out = {};
-      for (var k in value) {
-        if (Object.prototype.hasOwnProperty.call(value, k)) {
-          out[k] = deepParse(value[k], depth + 1);
-        }
-      }
-      return out;
-    }
-    return value;
+  function infoValue(key) {
+    var entry = info["game_info." + key];
+    return entry ? entry.value : undefined;
   }
 
-  function extractFeatureName(payload) {
-    if (!payload) return null;
-    if (typeof payload.feature === "string") return payload.feature;
-    if (payload.info && typeof payload.info === "object") {
-      var keys = Object.keys(payload.info);
-      if (keys.length) return keys[0];
-    }
-    return null;
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
   }
 
-  // Best-effort: hunt for a small set of common key names anywhere in a
-  // (small) object tree. Returns the first match found, case-insensitive.
-  function findFirstKey(value, keys, depth) {
-    if (depth > 4 || value == null) return undefined;
-    if (typeof value === "object") {
-      for (var k in value) {
-        if (!Object.prototype.hasOwnProperty.call(value, k)) continue;
-        if (keys.indexOf(k.toLowerCase()) !== -1) return value[k];
-      }
-      for (var k2 in value) {
-        if (!Object.prototype.hasOwnProperty.call(value, k2)) continue;
-        var found = findFirstKey(value[k2], keys, depth + 1);
-        if (found !== undefined) return found;
-      }
-    }
-    return undefined;
+  function formatTime(ms) {
+    return new Date(ms).toLocaleTimeString();
   }
 
-  function guessSlotLabel(item) {
-    if (item == null) return "?";
-    if (typeof item === "string" || typeof item === "number") return String(item);
-    var nameKeys = ["name", "character_id", "unit_id", "championid", "id"];
-    var found = findFirstKey(item, nameKeys, 0);
-    return found !== undefined ? String(found) : JSON.stringify(item).slice(0, 24);
+  function stat(label, value) {
+    if (value === undefined || value === null || value === "") return "";
+    return '<div class="stat"><div class="label">' + escapeHtml(label) +
+      '</div><div class="value">' + escapeHtml(String(value)) + "</div></div>";
   }
+
+  // -- Stat strip: gold / level / stage / match & combat phase / opponent --
 
   function renderStatStrip() {
-    var meCard = latestByFeature["me"];
-    var matchCard = latestByFeature["match_info"];
-    var stats = [];
+    var gold = infoValue("tft_gold");
+    var xp = infoValue("tft_xp") || {};
+    var round = infoValue("tft_round") || {};
+    var match = infoValue("tft_match");
+    var combat = infoValue("tft_combat");
+    var opp = infoValue("tft_opp");
 
-    if (meCard) {
-      ["gold", "level", "health"].forEach(function (key) {
-        var v = findFirstKey(meCard.value, [key], 0);
-        if (v !== undefined) stats.push({ label: key, value: v });
-      });
-    }
-    if (matchCard) {
-      var round = findFirstKey(matchCard.value, ["round", "stage_and_round"], 0);
-      if (round !== undefined) stats.push({ label: "round", value: round });
-    }
+    var level = xp.xp_level;
+    var levelDisplay = level !== undefined
+      ? level + (xp.xp_progress !== undefined ? " (" + xp.xp_progress + "/" + xp.xp_progress_max + ")" : "")
+      : undefined;
 
-    if (!stats.length) {
-      statStripEl.innerHTML = '<div class="empty">No recognizable gold/level/health/round fields yet.</div>';
-      return;
-    }
-    statStripEl.innerHTML = stats.map(function (s) {
-      return '<div class="stat"><div class="label">' + escapeHtml(s.label) +
-        '</div><div class="value">' + escapeHtml(String(s.value)) + "</div></div>";
-    }).join("");
+    var html = [
+      stat("Gold", gold),
+      stat("Level", levelDisplay),
+      stat("Stage", round.stage),
+      stat("Round type", round.round_type),
+      stat("Match", match),
+      stat("Combat", combat),
+      stat("Opponent", opp),
+    ].join("");
+
+    statStripEl.innerHTML = html || '<div class="empty">No gold/level/stage data yet.</div>';
   }
 
-  function renderSlots(value) {
-    var items = Array.isArray(value) ? value : null;
-    if (!items) {
-      // Sometimes the array is nested one level down (e.g. { slots: [...] }).
-      if (value && typeof value === "object") {
-        for (var k in value) {
-          if (Array.isArray(value[k])) { items = value[k]; break; }
-        }
-      }
-    }
-    if (!items || !items.length) return null;
-    return '<div class="slots">' + items.map(function (item) {
-      return '<div class="slot">' + escapeHtml(guessSlotLabel(item)) + "</div>";
+  // -- Generic "cell map" renderer, for board/bench/board_opponent --
+  // Shape: {cell_N: {name, level, item_1, item_2, item_3}}
+
+  function renderCellMap(value) {
+    if (!value || typeof value !== "object") return null;
+    var cells = Object.keys(value);
+    if (!cells.length) return null;
+    return '<div class="slots">' + cells.map(function (cellKey) {
+      var unit = value[cellKey];
+      var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; });
+      var itemsHtml = items.length ? '<div class="items">' + items.map(escapeHtml).join(", ") + "</div>" : "";
+      var stars = unit.level ? "★".repeat(Number(unit.level) || 0) : "";
+      return '<div class="slot">' + escapeHtml(unit.name || "?") +
+        (stars ? '<div class="items">' + stars + "</div>" : "") + itemsHtml + "</div>";
     }).join("") + "</div>";
   }
 
-  function renderFeatureCards() {
-    var names = Object.keys(latestByFeature);
-    if (!names.length) {
-      cardsEl.innerHTML = '<div class="empty">No events yet - waiting on the Overwolf proxy app.</div>';
+  // -- Shop: {slot_N: {name}}, plus the tft_shop_visible event as a badge --
+
+  function renderShop() {
+    var shop = infoValue("tft_shop");
+    var visibleEvt = events["tft_shop_visible"];
+    var badge = visibleEvt
+      ? '<span class="badge' + (visibleEvt.value ? " on" : "") + '">' + (visibleEvt.value ? "visible" : "hidden") + "</span>"
+      : "";
+    if (!shop) return '<div class="subcard"><h3>Shop' + badge + '</h3><div class="empty">No shop data yet.</div></div>';
+    var slots = Object.keys(shop).map(function (k) {
+      return '<div class="slot">' + escapeHtml((shop[k] && shop[k].name) || "?") + "</div>";
+    }).join("");
+    return '<div class="subcard"><h3>Shop' + badge + '</h3><div class="slots">' + slots + "</div></div>";
+  }
+
+  function renderCellSection(title, key) {
+    var value = infoValue(key);
+    var body = renderCellMap(value);
+    return '<div class="subcard"><h3>' + escapeHtml(title) + '</h3>' +
+      (body || '<div class="empty">No data yet.</div>') + "</div>";
+  }
+
+  // -- Roster: array of {summoner, tag_line, index, health, xp, localplayer, rank} --
+
+  function renderRoster() {
+    var roster = infoValue("tft_roster");
+    if (!Array.isArray(roster) || !roster.length) {
+      return '<div class="subcard"><h3>Roster</h3><div class="empty">No roster data yet.</div></div>';
+    }
+    var sorted = roster.slice().sort(function (a, b) { return Number(a.rank || 0) - Number(b.rank || 0); });
+    var rows = sorted.map(function (p) {
+      var health = Number(p.health || 0);
+      var isMe = String(p.localplayer) === "1";
+      var barWidth = Math.max(0, Math.min(100, health));
+      return '<div class="roster-row' + (isMe ? " me" : "") + '">' +
+        '<span>' + (p.rank || "-") + '</span>' +
+        '<span>' + escapeHtml(p.summoner || "?") + '</span>' +
+        '<div class="health-bar"><div class="health-bar-fill' + (health <= 30 ? " low" : "") + '" style="width:' + barWidth + '%"></div></div>' +
+        '<span>' + escapeHtml(String(health)) + " hp</span>" +
+        "</div>";
+    }).join("");
+    return '<div class="subcard"><h3>Roster</h3>' + rows + "</div>";
+  }
+
+  // -- Augments / item choices: {item_1..3: {name}} --
+
+  function renderItemSelect() {
+    var value = infoValue("tft_item_select");
+    if (!value) return '<div class="subcard"><h3>Augment / item choice</h3><div class="empty">No active choice.</div></div>';
+    var slots = Object.keys(value).map(function (k) {
+      return '<div class="slot">' + escapeHtml((value[k] && value[k].name) || "?") + "</div>";
+    }).join("");
+    return '<div class="subcard"><h3>Augment / item choice</h3><div class="slots">' + slots + "</div></div>";
+  }
+
+  // -- Carousel: {slot_N: {name, item_1, item_2}} --
+
+  function renderCarousel() {
+    var value = infoValue("tft_carousel");
+    if (!value) return '<div class="subcard"><h3>Carousel</h3><div class="empty">No carousel data.</div></div>';
+    var slots = Object.keys(value).map(function (k) {
+      var s = value[k];
+      var items = [s.item_1, s.item_2].filter(function (i) { return i; });
+      return '<div class="slot">' + escapeHtml(s.name || "?") +
+        (items.length ? '<div class="items">' + items.map(escapeHtml).join(", ") + "</div>" : "") + "</div>";
+    }).join("");
+    return '<div class="subcard"><h3>Carousel</h3><div class="slots">' + slots + "</div></div>";
+  }
+
+  // -- Round outcomes: array of {summoner, tag_line, round_outcome, localplayer} --
+
+  function renderRoundOutcome() {
+    var value = infoValue("tft_round_outcome");
+    if (!Array.isArray(value) || !value.length) {
+      return '<div class="subcard"><h3>Last round outcome</h3><div class="empty">No outcome yet.</div></div>';
+    }
+    var rows = value.map(function (p) {
+      var isMe = String(p.localplayer) === "1";
+      var win = p.round_outcome === "victory";
+      return '<div class="roster-row' + (isMe ? " me" : "") + '"><span></span><span>' + escapeHtml(p.summoner || "?") +
+        '</span><span class="badge' + (win ? " on" : "") + '">' + escapeHtml(p.round_outcome || "?") + "</span><span></span></div>";
+    }).join("");
+    return '<div class="subcard"><h3>Last round outcome</h3>' + rows + "</div>";
+  }
+
+  // -- Anything captured but without a dedicated renderer above --
+
+  function renderOtherData() {
+    var others = Object.keys(info).filter(function (fullKey) {
+      var key = fullKey.split(".")[1] || fullKey;
+      return DEDICATED_KEYS.indexOf(key) === -1;
+    });
+    if (!others.length) return "";
+    var cards = others.map(function (fullKey) {
+      var entry = info[fullKey];
+      return '<div class="card"><div class="card-head"><span class="feature-name">' + escapeHtml(fullKey) +
+        '</span><span class="ts">' + formatTime(entry.ts) + "</span></div><pre>" +
+        escapeHtml(JSON.stringify(entry.value, null, 2)) + "</pre></div>";
+    }).join("");
+    return '<div class="subcard"><h3>Other live data</h3>' + cards + "</div>";
+  }
+
+  function renderState() {
+    if (!Object.keys(info).length) {
+      stateEl.innerHTML = '<div class="empty">No data yet - waiting on the consumer/proxy bridge.</div>';
       return;
     }
-    names.sort(function (a, b) {
-      var ia = FEATURE_ORDER.indexOf(a), ib = FEATURE_ORDER.indexOf(b);
-      if (ia === -1) ia = 999;
-      if (ib === -1) ib = 999;
-      return ia - ib;
-    });
-
-    cardsEl.innerHTML = names.map(function (name) {
-      var entry = latestByFeature[name];
-      var slotsHtml = (name === "store" || name === "board" || name === "bench")
-        ? renderSlots(entry.value)
-        : null;
-      var body = slotsHtml || ("<pre>" + escapeHtml(JSON.stringify(entry.value, null, 2)) + "</pre>");
-      return '<div class="card"><div class="card-head"><span class="feature-name">' +
-        escapeHtml(name) + '</span><span class="ts">' + formatTime(entry.ts) +
-        "</span></div>" + body + "</div>";
-    }).join("");
+    stateEl.innerHTML = [
+      renderShop(),
+      renderCellSection("Board", "tft_board"),
+      renderCellSection("Bench", "tft_bench"),
+      renderItemSelect(),
+      renderCarousel(),
+      renderCellSection("Opponent's board", "tft_board_opponent"),
+      renderRoster(),
+      renderRoundOutcome(),
+      renderOtherData(),
+    ].join("");
   }
+
+  // -- Raw log (right pane) - always exactly what was streamed --
 
   function appendLogEntry(entry) {
     logEntries.push(entry);
@@ -325,28 +422,17 @@
   function handleEntry(entry) {
     appendLogEntry(entry);
 
-    var parsedPayload = deepParse(entry.payload, 0);
-    var featureName = extractFeatureName(parsedPayload);
-    if (featureName) {
-      var value = (parsedPayload.info && parsedPayload.info[featureName] !== undefined)
-        ? parsedPayload.info[featureName]
-        : parsedPayload;
-      latestByFeature[featureName] = { ts: entry.ts, value: deepParse(value, 0) };
+    if (entry.kind === "info_update" && entry.payload) {
+      var fullKey = entry.payload.category + "." + entry.payload.key;
+      info[fullKey] = { ts: entry.ts, value: entry.payload.value };
+    } else if (entry.kind === "event" && entry.payload) {
+      events[entry.payload.name] = { ts: entry.ts, value: entry.payload.value };
     }
+    // "lifecycle" entries (e.g. disconnected) are visible in the raw log
+    // but don't currently drive their own UI state.
 
-    renderFeatureCards();
+    renderState();
     renderStatStrip();
-  }
-
-  function formatTime(ms) {
-    var d = new Date(ms);
-    return d.toLocaleTimeString();
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
   }
 
   function setStatus(connected, text) {

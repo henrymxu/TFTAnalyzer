@@ -148,3 +148,4 @@ test/*.json
 .tft_cache/
 regions.local.json
 data/templates/
+consumer_bridge_output/
