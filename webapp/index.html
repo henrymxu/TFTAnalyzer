@@ -642,12 +642,12 @@
     });
 
     // Active traits first, inactive ones pushed to the bottom; within each
-    // group, smallest cap first (e.g. a "1/1" unique trait before a
-    // "5/11" one), ties broken by unit count descending.
+    // group, most units active first (e.g. a "3/11" trait before a "2/4"
+    // one, even though 4 < 11), ties broken by smallest cap first.
     rows.sort(function (a, b) {
       if (a.active !== b.active) return a.active ? -1 : 1;
-      if (a.maxTierValue !== b.maxTierValue) return a.maxTierValue - b.maxTierValue;
-      return b.count - a.count;
+      if (a.count !== b.count) return b.count - a.count;
+      return a.maxTierValue - b.maxTierValue;
     });
 
     return '<div class="trait-sidebar">' + rows.map(function (r) { return r.html; }).join("") + "</div>";
