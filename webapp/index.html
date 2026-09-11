@@ -109,6 +109,24 @@
   }
   .badge.on { background: rgba(62, 207, 142, 0.15); color: var(--good); }
 
+  .hex-grid { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; }
+  .hex-row { display: flex; gap: 4px; }
+  .hex-row.offset { margin-left: 27px; }
+  .hex-cell {
+    width: 62px;
+    min-height: 46px;
+    flex-shrink: 0;
+    background: #1e222c;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px;
+    font-size: 10px;
+    text-align: center;
+  }
+  .hex-cell.empty { background: transparent; border-style: dashed; border-color: var(--border); opacity: 0.35; }
+  .hex-name { font-weight: 600; overflow-wrap: anywhere; }
+  .hex-meta { color: var(--muted); font-size: 9px; margin-top: 2px; overflow-wrap: anywhere; }
+
   .roster-row {
     display: grid;
     grid-template-columns: 16px 1fr 60px 50px;
@@ -180,7 +198,10 @@
     data" as raw JSON, so nothing is silently dropped. "Last event" on the
     right shows exactly the most recent message, unmodified - every
     message still updates the cumulative state on the left, even ones
-    that flash by too fast to see individually there.
+    that flash by too fast to see individually there. The Board grids'
+    row/column layout is inferred (7-wide hex grid, 1-indexed cell
+    numbers, row-major) rather than documented anywhere - if a unit's
+    rendered position doesn't match reality, that math needs correcting.
   </p>
 
 <script>
@@ -274,6 +295,59 @@
       return '<div class="slot">' + escapeHtml(unit.name || "?") +
         (stars ? '<div class="items">' + stars + "</div>" : "") + itemsHtml + "</div>";
     }).join("") + "</div>";
+  }
+
+  // -- Board grid: same {cell_N: {...}} shape as above, but laid out as an
+  // actual 7-wide x 4-tall grid instead of a flat list. TFT's board is a
+  // 7x4 hex grid (28 cells); the row/col math below assumes cell_N is
+  // 1-indexed (1..28) row-major, inferred from the range of cell numbers
+  // actually observed (up to 26, including cell_1) - not documented by
+  // this tool, so verify against a real board and adjust if a unit's
+  // rendered position doesn't match reality.
+  var BOARD_COLUMNS = 7;
+  var BOARD_ROWS = 4;
+
+  function renderBoardGrid(value) {
+    if (!value || typeof value !== "object") return null;
+    var cellKeys = Object.keys(value);
+    if (!cellKeys.length) return null;
+
+    var grid = [];
+    for (var r = 0; r < BOARD_ROWS; r++) grid.push(new Array(BOARD_COLUMNS).fill(null));
+
+    cellKeys.forEach(function (cellKey) {
+      var n = parseInt(cellKey.replace("cell_", ""), 10);
+      if (isNaN(n)) return;
+      var idx = n - 1;
+      var row = Math.floor(idx / BOARD_COLUMNS);
+      var col = idx % BOARD_COLUMNS;
+      if (row >= 0 && row < BOARD_ROWS && col >= 0 && col < BOARD_COLUMNS) {
+        grid[row][col] = value[cellKey];
+      }
+    });
+
+    var rowsHtml = grid.map(function (row, rowIndex) {
+      var cellsHtml = row.map(function (unit) {
+        if (!unit) return '<div class="hex-cell empty"></div>';
+        var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; });
+        var stars = unit.level ? "★".repeat(Number(unit.level) || 0) : "";
+        return '<div class="hex-cell">' +
+          '<div class="hex-name">' + escapeHtml(unit.name || "?") + "</div>" +
+          (stars ? '<div class="hex-meta">' + stars + "</div>" : "") +
+          (items.length ? '<div class="hex-meta">' + items.map(escapeHtml).join(", ") + "</div>" : "") +
+          "</div>";
+      }).join("");
+      return '<div class="hex-row' + (rowIndex % 2 ? " offset" : "") + '">' + cellsHtml + "</div>";
+    }).join("");
+
+    return '<div class="hex-grid">' + rowsHtml + "</div>";
+  }
+
+  function renderBoardSection(title, key) {
+    var value = infoValue(key);
+    var body = renderBoardGrid(value);
+    return '<div class="subcard"><h3>' + escapeHtml(title) + '</h3>' +
+      (body || '<div class="empty">No data yet.</div>') + "</div>";
   }
 
   // -- Shop: {slot_N: {name}}, plus the tft_shop_visible event as a badge --
@@ -385,11 +459,11 @@
     }
     stateEl.innerHTML = [
       renderShop(),
-      renderCellSection("Board", "tft_board"),
+      renderBoardSection("Board", "tft_board"),
       renderCellSection("Bench", "tft_bench"),
       renderItemSelect(),
       renderCarousel(),
-      renderCellSection("Opponent's board", "tft_board_opponent"),
+      renderBoardSection("Opponent's board", "tft_board_opponent"),
       renderRoster(),
       renderRoundOutcome(),
       renderOtherData(),
