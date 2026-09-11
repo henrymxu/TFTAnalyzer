@@ -164,9 +164,14 @@
 
   .slot-icon { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; }
   .slot-label { font-size: 10px; margin-top: 3px; overflow-wrap: anywhere; }
+  .slot-count { font-size: 9px; color: var(--muted); margin-top: 1px; }
   .item-icons { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
   .item-icon { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; }
   .item-text { color: var(--muted); font-size: 9px; }
+
+  .bench-player { margin-bottom: 10px; }
+  .bench-player:last-child { margin-bottom: 0; }
+  .bench-player-name { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 
   .trait-chip {
     background: #1e222c;
@@ -309,6 +314,7 @@
     "tft_gold", "tft_xp", "tft_round", "tft_match", "tft_combat", "tft_opp",
     "tft_shop", "tft_board", "tft_bench", "tft_board_opponent",
     "tft_roster", "tft_item_select", "tft_carousel", "tft_round_outcome",
+    "tft_item_bench",
   ];
 
   var logEl = document.getElementById("log");
@@ -565,13 +571,15 @@
       var tiers = (known && known.tiers) || [];
       var sorted = tiers.slice().sort(function (a, b) { return a.min_units - b.min_units; });
       var metTier = null;
-      var nextTier = null;
       sorted.forEach(function (t) {
         if (count >= t.min_units) metTier = t;
-        else if (!nextTier) nextTier = t;
       });
       var active = !!metTier;
-      var progress = nextTier ? count + "/" + nextTier.min_units : (metTier ? count + "/" + metTier.min_units + " (max)" : String(count));
+      // Always show progress against the trait's highest tier (e.g. "5/11"),
+      // not just the next tier needed - so a maxed-out trait still shows
+      // where it sits against its actual cap instead of a "(max)" label.
+      var maxTier = sorted.length ? sorted[sorted.length - 1] : null;
+      var progress = maxTier ? count + "/" + maxTier.min_units : String(count);
       var icon = known && known.icon ? '<img class="trait-icon" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">' : "";
       return '<div class="trait-chip' + (active ? " active" : "") + '">' + icon +
         '<div class="trait-label">' + escapeHtml(name) + '</div><div class="trait-progress">' + escapeHtml(progress) + "</div></div>";
@@ -653,6 +661,30 @@
     return '<div class="subcard"><h3>Carousel</h3><div class="slots">' + slots + "</div></div>";
   }
 
+  // -- Item bench: array of {summoner, tag_line, bench_items: [{name, count}]} --
+
+  function renderItemBench() {
+    var value = infoValue("tft_item_bench");
+    if (!Array.isArray(value) || !value.length) {
+      return '<div class="subcard"><h3>Item bench</h3><div class="empty">No item bench data yet.</div></div>';
+    }
+    var players = value.map(function (p) {
+      var items = Array.isArray(p.bench_items) ? p.bench_items : [];
+      var slots = items.length
+        ? items.map(function (it) {
+            var known = lookupEntry(it.name, "item");
+            var label = (known && known.name) || prettifyFallback(it.name || "") || "?";
+            var icon = known && known.icon ? '<img class="slot-icon" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">' : null;
+            var count = it.count > 1 ? '<div class="slot-count">x' + escapeHtml(String(it.count)) + "</div>" : "";
+            return '<div class="slot">' + (icon ? icon + '<div class="slot-label">' + escapeHtml(label) + "</div>" : escapeHtml(label)) + count + "</div>";
+          }).join("")
+        : '<div class="empty">Empty.</div>';
+      return '<div class="bench-player"><div class="bench-player-name">' + escapeHtml(p.summoner || "?") +
+        '</div><div class="slots">' + slots + "</div></div>";
+    }).join("");
+    return '<div class="subcard"><h3>Item bench</h3>' + players + "</div>";
+  }
+
   // -- Round outcomes: array of {summoner, tag_line, round_outcome, localplayer} --
 
   function renderRoundOutcome() {
@@ -696,6 +728,7 @@
       renderBoardSection("Board", "tft_board", true),
       renderTraits(),
       renderCellSection("Bench", "tft_bench"),
+      renderItemBench(),
       renderItemSelect(),
       renderCarousel(),
       renderBoardSection("Opponent's board", "tft_board_opponent"),
