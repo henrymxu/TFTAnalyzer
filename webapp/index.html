@@ -188,24 +188,49 @@
   .player-section-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 4px; }
   .player-section-label:first-of-type { margin-top: 0; }
 
-  .trait-chip {
+  /* Vertical trait sidebar, one row per active/tracked trait, sitting to
+     the left of a board - mirrors TFT's own in-game trait tracker (icon +
+     unit count badge + tier-colored border, name and progress alongside). */
+  .board-with-traits { display: flex; gap: 12px; align-items: flex-start; }
+  .board-with-traits > .hex-grid { min-width: 0; flex: 1; }
+  .trait-sidebar { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; width: 108px; }
+  .trait-row { display: flex; align-items: center; gap: 6px; opacity: 0.5; }
+  .trait-row.active { opacity: 1; }
+  .trait-row-icon-wrap { position: relative; width: 26px; height: 26px; flex-shrink: 0; }
+  .trait-row-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+    object-fit: cover;
+    display: block;
     background: #1e222c;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 10px;
-    min-width: 64px;
+    border: 2px solid #454b58;
+  }
+  .trait-row-count {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: #0f1115;
+    border: 1px solid #454b58;
+    border-radius: 999px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 2px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 14px;
     text-align: center;
-    opacity: 0.55;
   }
-  .trait-chip.active {
-    opacity: 1;
-    border-color: var(--good);
-    background: rgba(62, 207, 142, 0.1);
-  }
-  .trait-icon { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; }
-  .trait-label { font-size: 11px; font-weight: 600; margin-top: 3px; }
-  .trait-progress { font-size: 10px; color: var(--muted); }
-  .trait-chip.active .trait-progress { color: var(--good); }
+  .trait-row-text { min-width: 0; }
+  .trait-row-name { font-size: 10px; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+  .trait-row-progress { font-size: 9px; color: var(--muted); }
+  /* Tier colors follow Community Dragon's "style" field: 1 bronze,
+     3 silver, 4 unique/chromatic (single-tier traits), 5 gold, 6 prismatic. */
+  .trait-row.tier-1 .trait-row-icon, .trait-row.tier-1 .trait-row-count { border-color: #a9784a; }
+  .trait-row.tier-3 .trait-row-icon, .trait-row.tier-3 .trait-row-count { border-color: #c3c9d4; }
+  .trait-row.tier-4 .trait-row-icon, .trait-row.tier-4 .trait-row-count { border-color: #b98af0; }
+  .trait-row.tier-5 .trait-row-icon, .trait-row.tier-5 .trait-row-count { border-color: #f0c04d; }
+  .trait-row.tier-6 .trait-row-icon, .trait-row.tier-6 .trait-row-count { border-color: #6de0e0; }
 
   .roster-row {
     display: grid;
@@ -288,11 +313,14 @@
     Dragon's TFT data (fetched once from <code>/names.json</code>, icons
     hotlinked directly from their CDN) with a heuristic text-only
     fallback for anything not found there, like PvE-variant names.
-    Active/inactive traits are computed client-side from the board's
+    Active/inactive traits are computed client-side from a board's
     champions (there's no dedicated trait key in the event stream) against
     each trait's tier thresholds from Community Dragon, matched by trait
     display name rather than internal apiName - that's what a champion's
-    own trait list actually contains. The augment/item choice card checks
+    own trait list actually contains - and shown as a vertical icon
+    sidebar to the left of that board (your board, the opponent's, and
+    each player's board under "All players"), same as TFT's own trait
+    tracker. The augment/item choice card checks
     Community Dragon's augment table before its item table, since TFT
     reuses the same <code>tft_item_select</code> key for both; augments
     are items flagged <code>isAugment</code> in Community Dragon's data,
@@ -551,17 +579,14 @@
     return '<div class="hex-grid">' + rowsHtml + "</div>";
   }
 
-  function renderBoardSection(title, key, flipRows) {
-    var value = infoValue(key);
-    var body = renderBoardGrid(value, flipRows);
-    return '<div class="subcard"><h3>' + escapeHtml(title) + '</h3>' +
-      (body || '<div class="empty">No data yet.</div>') + "</div>";
-  }
-
-  // -- Traits: tallied from tft_board's units against each champion's own
+  // -- Traits: tallied from a board's units against each champion's own
   // trait list (from /names.json) and each trait's tier thresholds - TFT's
   // events stream has no dedicated "active synergies" key, so this is
-  // computed client-side rather than read directly. --------------------
+  // computed client-side rather than read directly. Rendered as a vertical
+  // icon sidebar next to the board it was computed from (own board,
+  // opponent's board, or a specific player's board in "All players"),
+  // matching TFT's own in-game trait tracker rather than a single global
+  // list. ----------------------------------------------------------------
 
   function computeTraitCounts(boardValue) {
     var counts = {};
@@ -578,17 +603,12 @@
     return counts;
   }
 
-  function renderTraits() {
-    var boardValue = infoValue("tft_board");
+  function renderTraitSidebar(boardValue) {
     var counts = computeTraitCounts(boardValue);
     var traitKeys = Object.keys(counts);
-    if (!traitKeys.length) {
-      return '<div class="subcard"><h3>Traits</h3><div class="empty">' +
-        (Object.keys(nameMaps.traits).length ? "No traits active." : "No trait data loaded yet.") +
-        "</div></div>";
-    }
+    if (!traitKeys.length) return "";
 
-    var chips = traitKeys.map(function (key) {
+    var rows = traitKeys.map(function (key) {
       var count = counts[key];
       var known = nameMaps.traits[key];
       var name = (known && known.name) || prettifyFallback(key);
@@ -604,12 +624,36 @@
       // where it sits against its actual cap instead of a "(max)" label.
       var maxTier = sorted.length ? sorted[sorted.length - 1] : null;
       var progress = maxTier ? count + "/" + maxTier.min_units : String(count);
-      var icon = known && known.icon ? '<img class="trait-icon" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">' : "";
-      return '<div class="trait-chip' + (active ? " active" : "") + '">' + icon +
-        '<div class="trait-label">' + escapeHtml(name) + '</div><div class="trait-progress">' + escapeHtml(progress) + "</div></div>";
-    }).join("");
+      var tierClass = metTier && metTier.style !== undefined && metTier.style !== null ? " tier-" + metTier.style : "";
+      var icon = known && known.icon
+        ? '<img class="trait-row-icon" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">'
+        : '<div class="trait-row-icon"></div>';
+      return { count: count, active: active, html:
+        '<div class="trait-row' + (active ? " active" : "") + tierClass + '">' +
+          '<div class="trait-row-icon-wrap">' + icon + '<span class="trait-row-count">' + count + "</span></div>" +
+          '<div class="trait-row-text"><div class="trait-row-name">' + escapeHtml(name) +
+          '</div><div class="trait-row-progress">' + escapeHtml(progress) + "</div></div>" +
+        "</div>" };
+    });
 
-    return '<div class="subcard"><h3>Traits</h3><div class="slots">' + chips + "</div></div>";
+    // Active traits first (most units first), then inactive ones, mirroring
+    // how TFT's own trait tracker orders the list.
+    rows.sort(function (a, b) {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return b.count - a.count;
+    });
+
+    return '<div class="trait-sidebar">' + rows.map(function (r) { return r.html; }).join("") + "</div>";
+  }
+
+  function renderBoardSection(title, key, flipRows) {
+    var value = infoValue(key);
+    var body = renderBoardGrid(value, flipRows);
+    var sidebar = renderTraitSidebar(value);
+    var content = body
+      ? (sidebar ? '<div class="board-with-traits">' + sidebar + body + "</div>" : body)
+      : '<div class="empty">No data yet.</div>';
+    return '<div class="subcard"><h3>' + escapeHtml(title) + '</h3>' + content + "</div>";
   }
 
   // -- Shop: {slot_N: {name}}, plus the tft_shop_visible event as a badge --
@@ -764,6 +808,8 @@
     var benchMap = cellListToMap(current.bench);
     var boardHtml = renderBoardGrid(boardMap, current.summoner === localName) || '<div class="empty">No board data.</div>';
     var benchHtml = renderCellMap(benchMap) || '<div class="empty">No bench data.</div>';
+    var boardSidebar = renderTraitSidebar(boardMap);
+    var boardSection = boardSidebar ? '<div class="board-with-traits">' + boardSidebar + boardHtml + "</div>" : boardHtml;
 
     var itemBenchValue = infoValue("tft_item_bench");
     var itemBenchEntry = Array.isArray(itemBenchValue)
@@ -773,7 +819,7 @@
 
     return '<div class="subcard"><h3>All players</h3>' +
       '<div class="player-tabs">' + tabs + "</div>" +
-      '<div class="player-section-label">Board</div>' + boardHtml +
+      '<div class="player-section-label">Board</div>' + boardSection +
       '<div class="player-section-label">Bench</div>' + benchHtml +
       '<div class="player-section-label">Item bench</div><div class="slots">' + itemBenchHtml + "</div>" +
       "</div>";
@@ -820,7 +866,6 @@
     stateEl.innerHTML = [
       renderShop(),
       renderBoardSection("Board", "tft_board", true),
-      renderTraits(),
       renderCellSection("Bench", "tft_bench"),
       renderItemBench(),
       renderItemSelect(),
