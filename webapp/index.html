@@ -94,8 +94,11 @@
     border-radius: 6px;
     padding: 6px 10px;
     font-size: 12px;
-    min-width: 70px;
+    min-width: 64px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
   .slot .items { color: var(--muted); font-size: 10px; margin-top: 2px; }
   .badge {
@@ -123,23 +126,47 @@
   }
   .demo-btn:hover { border-color: var(--accent); }
 
-  .hex-grid { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; }
-  .hex-row { display: flex; gap: 4px; }
-  .hex-row.offset { margin-left: 27px; }
+  /* Flat-top/bottom, pointed-left/right hexagons (matches TFT board
+     diagrams), tiled in rows with alternate rows offset by half a cell
+     so they interlock like a honeycomb rather than sitting in a plain
+     rectangular grid. */
+  .hex-grid { display: flex; flex-direction: column; gap: 6px; overflow-x: auto; }
+  .hex-row { display: flex; gap: 6px; }
+  .hex-row.offset { margin-left: 35px; }
+  .hex-wrap { width: 64px; flex-shrink: 0; text-align: center; }
   .hex-cell {
-    width: 62px;
-    min-height: 46px;
-    flex-shrink: 0;
-    background: #1e222c;
+    width: 64px;
+    height: 58px;
+    position: relative;
+    background-color: #1e222c;
+    background-size: cover;
+    background-position: center;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px;
-    font-size: 10px;
-    text-align: center;
+    clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .hex-cell.empty { background: transparent; border-style: dashed; border-color: var(--border); opacity: 0.35; }
-  .hex-name { font-weight: 600; overflow-wrap: anywhere; }
-  .hex-meta { color: var(--muted); font-size: 9px; margin-top: 2px; overflow-wrap: anywhere; }
+  .hex-cell.empty { background-color: transparent; border-color: var(--border); opacity: 0.3; }
+  .hex-fallback { font-size: 9px; font-weight: 600; padding: 0 14px; overflow-wrap: anywhere; }
+  .hex-stars {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    background: rgba(15, 17, 21, 0.75);
+    border-radius: 3px;
+    padding: 0 3px;
+    line-height: 1.3;
+  }
+  .hex-caption { font-size: 10px; font-weight: 600; margin-top: 3px; overflow-wrap: anywhere; }
+
+  .slot-icon { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; }
+  .slot-label { font-size: 10px; margin-top: 3px; overflow-wrap: anywhere; }
+  .item-icons { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+  .item-icon { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; }
+  .item-text { color: var(--muted); font-size: 9px; }
 
   .roster-row {
     display: grid;
@@ -218,8 +245,9 @@
     row/column layout is inferred (7-wide hex grid, 1-indexed cell
     numbers, row-major) rather than documented anywhere - if a unit's
     rendered position doesn't match reality, that math needs correcting.
-    Champion/item names are looked up against Community Dragon's TFT data
-    (fetched once from <code>/names.json</code>) with a heuristic cleanup
+    Champion/item names and icons are looked up against Community
+    Dragon's TFT data (fetched once from <code>/names.json</code>, icons
+    hotlinked directly from their CDN) with a heuristic text-only
     fallback for anything not found there, like PvE-variant names.
     "Load demo" replays a small anonymized excerpt from a real captured
     session through every renderer above, so this page shows something
@@ -310,11 +338,43 @@
     return joined.replace(/\b\w/g, function (c) { return c.toUpperCase(); }) || raw;
   }
 
+  function lookupEntry(raw, kind) {
+    if (!raw) return null;
+    var table = kind === "item" ? nameMaps.items : nameMaps.champions;
+    return (table && table[raw.toLowerCase()]) || null;
+  }
+
   function prettifyName(raw, kind) {
     if (!raw) return raw;
-    var table = kind === "item" ? nameMaps.items : nameMaps.champions;
-    var known = table && table[raw.toLowerCase()];
-    return known || prettifyFallback(raw);
+    var known = lookupEntry(raw, kind);
+    return (known && known.name) || prettifyFallback(raw);
+  }
+
+  // Real icon <img> if Community Dragon had one for this apiName, else
+  // null - callers fall back to a text-only cell in that case (mainly
+  // PvE-variant names, which aren't in the standard champion/item data).
+  function iconImg(raw, kind, cssClass) {
+    var known = lookupEntry(raw, kind);
+    if (!known || !known.icon) return null;
+    return '<img class="' + cssClass + '" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">';
+  }
+
+  // Icon-or-text visual for a champion inside a rectangular .slot (shop,
+  // carousel, augment choice).
+  function championSlotVisual(name) {
+    if (!name) return "?";
+    var icon = iconImg(name, "champion", "slot-icon");
+    var label = prettifyName(name, "champion") || "?";
+    return icon ? icon + '<div class="slot-label">' + escapeHtml(label) + "</div>" : escapeHtml(label);
+  }
+
+  // Small icon row for a unit's items (falls back to comma-separated text
+  // for any item with no resolved icon).
+  function itemIconsRow(items) {
+    if (!items.length) return "";
+    return '<div class="item-icons">' + items.map(function (raw) {
+      return iconImg(raw, "item", "item-icon") || '<span class="item-text">' + escapeHtml(prettifyName(raw, "item")) + "</span>";
+    }).join("") + "</div>";
   }
 
   function stat(label, value) {
@@ -360,11 +420,10 @@
     if (!cells.length) return null;
     return '<div class="slots">' + cells.map(function (cellKey) {
       var unit = value[cellKey];
-      var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; }).map(function (i) { return prettifyName(i, "item"); });
-      var itemsHtml = items.length ? '<div class="items">' + items.map(escapeHtml).join(", ") + "</div>" : "";
+      var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; });
       var stars = unit.level ? "★".repeat(Number(unit.level) || 0) : "";
-      return '<div class="slot">' + escapeHtml(prettifyName(unit.name, "champion") || "?") +
-        (stars ? '<div class="items">' + stars + "</div>" : "") + itemsHtml + "</div>";
+      return '<div class="slot">' + championSlotVisual(unit.name) +
+        (stars ? '<div class="items">' + stars + "</div>" : "") + itemIconsRow(items) + "</div>";
     }).join("") + "</div>";
   }
 
@@ -401,13 +460,21 @@
 
     var rowsHtml = grid.map(function (row, rowIndex) {
       var cellsHtml = row.map(function (unit) {
-        if (!unit) return '<div class="hex-cell empty"></div>';
-        var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; }).map(function (i) { return prettifyName(i, "item"); });
+        if (!unit) return '<div class="hex-wrap"><div class="hex-cell empty"></div></div>';
+
+        var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; });
         var stars = unit.level ? "★".repeat(Number(unit.level) || 0) : "";
-        return '<div class="hex-cell">' +
-          '<div class="hex-name">' + escapeHtml(prettifyName(unit.name, "champion") || "?") + "</div>" +
-          (stars ? '<div class="hex-meta">' + stars + "</div>" : "") +
-          (items.length ? '<div class="hex-meta">' + items.map(escapeHtml).join(", ") + "</div>" : "") +
+        var known = lookupEntry(unit.name, "champion");
+        var label = (known && known.name) || prettifyFallback(unit.name || "") || "?";
+        var hexStyle = known && known.icon ? ' style="background-image:url(' + escapeHtml(known.icon) + ')"' : "";
+        var hexInner = known && known.icon ? "" : '<span class="hex-fallback">' + escapeHtml(label) + "</span>";
+
+        return '<div class="hex-wrap">' +
+          '<div class="hex-cell"' + hexStyle + '>' + hexInner +
+          (stars ? '<span class="hex-stars">' + stars + "</span>" : "") +
+          "</div>" +
+          '<div class="hex-caption">' + escapeHtml(label) + "</div>" +
+          itemIconsRow(items) +
           "</div>";
       }).join("");
       return '<div class="hex-row' + (rowIndex % 2 ? " offset" : "") + '">' + cellsHtml + "</div>";
@@ -433,8 +500,7 @@
       : "";
     if (!shop) return '<div class="subcard"><h3>Shop' + badge + '</h3><div class="empty">No shop data yet.</div></div>';
     var slots = Object.keys(shop).map(function (k) {
-      var name = shop[k] && shop[k].name;
-      return '<div class="slot">' + escapeHtml(name ? prettifyName(name, "champion") : "?") + "</div>";
+      return '<div class="slot">' + championSlotVisual(shop[k] && shop[k].name) + "</div>";
     }).join("");
     return '<div class="subcard"><h3>Shop' + badge + '</h3><div class="slots">' + slots + "</div></div>";
   }
@@ -475,7 +541,10 @@
     if (!value) return '<div class="subcard"><h3>Augment / item choice</h3><div class="empty">No active choice.</div></div>';
     var slots = Object.keys(value).map(function (k) {
       var name = value[k] && value[k].name;
-      return '<div class="slot">' + escapeHtml(name ? prettifyName(name, "item") : "?") + "</div>";
+      if (!name) return '<div class="slot">?</div>';
+      var icon = iconImg(name, "item", "slot-icon");
+      var label = prettifyName(name, "item");
+      return '<div class="slot">' + (icon ? icon + '<div class="slot-label">' + escapeHtml(label) + "</div>" : escapeHtml(label)) + "</div>";
     }).join("");
     return '<div class="subcard"><h3>Augment / item choice</h3><div class="slots">' + slots + "</div></div>";
   }
@@ -487,9 +556,8 @@
     if (!value) return '<div class="subcard"><h3>Carousel</h3><div class="empty">No carousel data.</div></div>';
     var slots = Object.keys(value).map(function (k) {
       var s = value[k];
-      var items = [s.item_1, s.item_2].filter(function (i) { return i; }).map(function (i) { return prettifyName(i, "item"); });
-      return '<div class="slot">' + escapeHtml(prettifyName(s.name, "champion") || "?") +
-        (items.length ? '<div class="items">' + items.map(escapeHtml).join(", ") + "</div>" : "") + "</div>";
+      var items = [s.item_1, s.item_2].filter(function (i) { return i; });
+      return '<div class="slot">' + championSlotVisual(s.name) + itemIconsRow(items) + "</div>";
     }).join("");
     return '<div class="subcard"><h3>Carousel</h3><div class="slots">' + slots + "</div></div>";
   }

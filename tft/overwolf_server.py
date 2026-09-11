@@ -87,23 +87,33 @@ async def index_handler(request: web.Request) -> web.FileResponse:
 
 
 def build_name_maps(client: CDragonClient | None = None) -> dict:
-    """Champion/item apiName -> display name, from the same Community
+    """Champion/item apiName -> {name, icon}, from the same Community
     Dragon source tft.static_data already uses - for prettifying the raw
     internal names (e.g. "TFT14_Draven", or PvE-variant names like
-    "DA_Draven18") the game events stream carries. Degrades to empty maps
-    (the webapp falls back to a heuristic cleanup) rather than failing the
-    request if Community Dragon isn't reachable."""
+    "DA_Draven18") the game events stream carries, and for showing real
+    icons instead of text. icon is a directly hotlinkable CDN URL (or
+    None if the set data had no icon for that entry) - the browser loads
+    it straight from Community Dragon, this server never proxies bytes.
+    Degrades to empty maps (the webapp falls back to a heuristic name
+    cleanup and text-only cells) rather than failing the request if
+    Community Dragon isn't reachable."""
     client = client or CDragonClient()
-    champions: dict[str, str] = {}
-    items: dict[str, str] = {}
+    champions: dict[str, dict] = {}
+    items: dict[str, dict] = {}
     try:
         for champ in client.get_champions():
-            champions[champ.api_name.lower()] = champ.display_name
+            champions[champ.api_name.lower()] = {
+                "name": champ.display_name,
+                "icon": CDragonClient.icon_url(champ.icon_path) if champ.icon_path else None,
+            }
     except Exception:
         logger.warning("Could not fetch champion names from Community Dragon", exc_info=True)
     try:
         for item in client.get_items():
-            items[item.api_name.lower()] = item.display_name
+            items[item.api_name.lower()] = {
+                "name": item.display_name,
+                "icon": CDragonClient.icon_url(item.icon_path) if item.icon_path else None,
+            }
     except Exception:
         logger.warning("Could not fetch item names from Community Dragon", exc_info=True)
     return {"champions": champions, "items": items}

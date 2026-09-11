@@ -7,10 +7,13 @@ from tft.overwolf_server import build_name_maps, create_app
 
 class _FakeCDragonClient:
     def get_champions(self):
-        return [Champion(api_name="TFT14_Draven", display_name="Draven", cost=1)]
+        return [
+            Champion(api_name="TFT14_Draven", display_name="Draven", cost=1, icon_path="/Assets/Draven.tex"),
+            Champion(api_name="TFT14_NoIcon", display_name="No Icon", cost=1, icon_path=None),
+        ]
 
     def get_items(self):
-        return [Item(api_name="TFT_Item_InfinityEdge", display_name="Infinity Edge")]
+        return [Item(api_name="TFT_Item_InfinityEdge", display_name="Infinity Edge", icon_path="/Assets/IE.dds")]
 
 
 class _BrokenCDragonClient:
@@ -24,8 +27,16 @@ class _BrokenCDragonClient:
 def test_build_name_maps_lowercases_api_names_as_keys():
     maps = build_name_maps(client=_FakeCDragonClient())
 
-    assert maps["champions"]["tft14_draven"] == "Draven"
-    assert maps["items"]["tft_item_infinityedge"] == "Infinity Edge"
+    assert maps["champions"]["tft14_draven"]["name"] == "Draven"
+    assert maps["champions"]["tft14_draven"]["icon"] == "https://raw.communitydragon.org/latest/game/assets/draven.png"
+    assert maps["items"]["tft_item_infinityedge"]["name"] == "Infinity Edge"
+    assert maps["items"]["tft_item_infinityedge"]["icon"] == "https://raw.communitydragon.org/latest/game/assets/ie.png"
+
+
+def test_build_name_maps_handles_missing_icon_path():
+    maps = build_name_maps(client=_FakeCDragonClient())
+
+    assert maps["champions"]["tft14_noicon"] == {"name": "No Icon", "icon": None}
 
 
 def test_build_name_maps_degrades_gracefully_on_failure():

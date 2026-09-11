@@ -75,12 +75,17 @@ class CDragonClient:
         raw = self._load_raw(force_refresh)
         return [Item.from_cdragon(i) for i in raw.get("items", [])]
 
-    def download_icon(self, icon_path: str) -> bytes:
-        """Fetch a raw icon asset (champion tile, trait icon, ...) by the
-        game-relative path returned in the set data, for use as a template
-        match target - see tft.vision.templates."""
+    @staticmethod
+    def icon_url(icon_path: str) -> str:
+        """Public CDN URL for a game-relative icon path from the set data -
+        directly hotlinkable from a browser <img> (no auth, no proxying
+        needed), which is what tft.overwolf_server's /names.json uses."""
         normalized = re.sub(r"\.(dds|tex)$", ".png", icon_path.lower().lstrip("/"))
-        url = CDRAGON_ASSET_BASE + normalized
-        response = self._session.get(url, timeout=30)
+        return CDRAGON_ASSET_BASE + normalized
+
+    def download_icon(self, icon_path: str) -> bytes:
+        """Fetch a raw icon asset's bytes (champion tile, trait icon, ...),
+        for use as a template match target - see tft.vision.templates."""
+        response = self._session.get(self.icon_url(icon_path), timeout=30)
         response.raise_for_status()
         return response.content
