@@ -6,7 +6,7 @@ a plain console tool anyone can run.
 
 Two modes:
 
-    python -m tools.consumer_bridge --exe path\\to\\consumer.exe [--game-id 21570]
+    python -m tools.consumer_bridge --exe path\\to\\consumer.exe [--game-id 10054261]
         Launches consumer.exe with TFT's game id as its one required
         argument (found empirically: it exits immediately printing
         "Missing parameter: [game id]" if omitted - not documented
@@ -240,10 +240,10 @@ def main() -> None:
     parser.add_argument(
         "--game-id",
         type=int,
-        default=21570,
-        help="TFT's Overwolf game/class id, passed to consumer.exe (default: 21570, "
-        "TFT's current dedicated id per Overwolf's docs at time of writing - try 5426, "
-        "the older shared League/TFT id, if that one comes back empty).",
+        default=10054261,
+        help="TFT's Overwolf running-game id, passed to consumer.exe (default: 10054261, "
+        "confirmed working empirically - Overwolf's docs suggested 21570 or 5426 as the "
+        "base class id, but consumer.exe wants the full running-instance id instead).",
     )
     parser.add_argument(
         "--replay-delay", type=float, default=0.0, help="Seconds to sleep between replayed lines (default: as fast as possible)."
