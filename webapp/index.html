@@ -40,6 +40,16 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--border);
   }
+  .render-error {
+    background: rgba(255, 93, 93, 0.12);
+    border-bottom: 1px solid var(--bad);
+    color: var(--bad);
+    padding: 8px 16px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
   .stat {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -282,6 +292,7 @@
   </header>
 
   <div class="stat-strip" id="stat-strip"></div>
+  <div id="render-error" class="render-error" hidden></div>
 
   <main>
     <section class="pane">
@@ -334,7 +345,12 @@
     snapshot, only the latest one is shown) instead of the
     <code>tft_board</code>/<code>tft_bench</code> keys, which still update
     every round but are otherwise only visible as raw JSON under "Other
-    live data" now. "Load demo" replays a small anonymized excerpt from a
+    live data" now. If a real-world data shape trips a rendering bug, a
+    red banner appears here with the error instead of the page silently
+    freezing on stale content - the underlying state still keeps
+    updating from every message either way, so a fix (or the game itself
+    sending a normal value again) recovers on the next update with no
+    refresh needed. "Load demo" replays a small anonymized excerpt from a
     real captured session through every renderer above, so this page
     shows something even with no bridge, no relay server data, and no
     game running.
@@ -376,6 +392,7 @@
   var logEl = document.getElementById("log");
   var stateEl = document.getElementById("state-sections");
   var otherDataEl = document.getElementById("other-data");
+  var renderErrorEl = document.getElementById("render-error");
   var statStripEl = document.getElementById("stat-strip");
   var statusDot = document.getElementById("status-dot");
   var statusText = document.getElementById("status-text");
@@ -453,6 +470,17 @@
     return '<img class="' + cssClass + '" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">';
   }
 
+  // "level" is meant to be a small positive star count (1-3), but it
+  // comes straight from the live game events stream with no guarantee
+  // on that - String.repeat() throws for a negative or non-integer
+  // count, which took down rendering entirely the one time real data
+  // produced a negative level. Clamped defensively here instead.
+  function starRating(level) {
+    if (!level) return "";
+    var n = Math.max(0, Math.floor(Number(level)) || 0);
+    return n ? "★".repeat(n) : "";
+  }
+
   // Icon-or-text visual for a champion inside a rectangular .slot (shop,
   // carousel, augment choice).
   function championSlotVisual(name) {
@@ -515,7 +543,7 @@
     return '<div class="slots">' + cells.map(function (cellKey) {
       var unit = value[cellKey];
       var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; });
-      var stars = unit.level ? "★".repeat(Number(unit.level) || 0) : "";
+      var stars = starRating(unit.level);
       return '<div class="slot">' + championSlotVisual(unit.name) +
         (stars ? '<div class="items">' + stars + "</div>" : "") + itemIconsRow(items) + "</div>";
     }).join("") + "</div>";
@@ -557,7 +585,7 @@
         if (!unit) return '<div class="hex-wrap"><div class="hex-cell empty"></div></div>';
 
         var items = [unit.item_1, unit.item_2, unit.item_3].filter(function (i) { return i; });
-        var stars = unit.level ? "★".repeat(Number(unit.level) || 0) : "";
+        var stars = starRating(unit.level);
         var known = lookupEntry(unit.name, "champion");
         var label = (known && known.name) || prettifyFallback(unit.name || "") || "?";
         var hexStyle = known && known.icon ? ' style="background-image:url(' + escapeHtml(known.icon) + ')"' : "";
@@ -783,7 +811,12 @@
   function renderAllPlayers() {
     var snapshots = infoValue("tft_board_players");
     var latest = Array.isArray(snapshots) && snapshots.length ? snapshots[snapshots.length - 1] : null;
-    var players = latest && Array.isArray(latest.board) ? latest.board : [];
+    var rawPlayers = latest && Array.isArray(latest.board) ? latest.board : [];
+    // Defensive: this array comes straight from the live game events
+    // stream, unlike the curated demo data - guard against any entry
+    // that isn't a real player object with a name, rather than letting
+    // one bad entry throw and freeze rendering for every future update.
+    var players = rawPlayers.filter(function (p) { return p && p.summoner; });
     if (!players.length) {
       return '<div class="subcard"><h3>All players</h3><div class="empty">No scouting data yet.</div></div>';
     }
@@ -792,7 +825,7 @@
     var localName = null;
     if (Array.isArray(roster)) {
       roster.forEach(function (p) {
-        if (String(p.localplayer) === "1") localName = p.summoner;
+        if (p && String(p.localplayer) === "1") localName = p.summoner;
       });
     }
 
@@ -935,8 +968,25 @@
     var lastEntry = batch[batch.length - 1];
     if (lastEntry) renderLastEvent(lastEntry);
 
-    renderState();
-    renderStatStrip();
+    // info/events (above) are always updated regardless of what happens
+    // next - a rendering bug tripped by one specific real-world data shape
+    // shouldn't leave the whole page silently stuck on stale content
+    // forever (previously, an uncaught exception here meant every future
+    // batch kept re-throwing at the same spot, and neither "Recreated
+    // state" nor the stat strip would ever update again). Surface the
+    // error visibly - console for the full stack, an inline banner with
+    // no devtools needed - and keep processing future batches either way.
+    try {
+      renderState();
+      renderStatStrip();
+      renderErrorEl.hidden = true;
+    } catch (err) {
+      console.error("Rendering failed on this update:", err);
+      renderErrorEl.hidden = false;
+      renderErrorEl.textContent = "Rendering failed on the latest update (" +
+        (err && err.message ? err.message : String(err)) +
+        ") - state below may be stale until the next update. Check the browser console for the full error and share it if this persists.";
+    }
   }
 
   // -- Demo mode: replays the bundled sample data through the exact same
