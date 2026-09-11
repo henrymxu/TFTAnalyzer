@@ -251,10 +251,11 @@
   }
 
   #log {
-    max-height: 70vh;
+    max-height: 40vh;
     overflow-y: auto;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 12px;
+    margin-bottom: 16px;
   }
   .log-entry { padding: 6px 0; }
   .log-entry .meta { color: var(--muted); }
@@ -290,6 +291,7 @@
     <section class="pane">
       <h2>Last event</h2>
       <div id="log"><div class="empty">No events yet.</div></div>
+      <div id="other-data"></div>
     </section>
   </main>
 
@@ -298,10 +300,12 @@
     actual TFT session (game_info.tft_gold, tft_shop, tft_board, tft_bench,
     tft_roster, tft_item_select, tft_carousel, etc). Anything captured that
     isn't rendered into a dedicated card yet shows up under "Other live
-    data" as raw JSON, so nothing is silently dropped. "Last event" on the
-    right shows exactly the most recent message, unmodified - every
-    message still updates the cumulative state on the left, even ones
-    that flash by too fast to see individually there. The Board grids'
+    data" on the right (one card per key, always its latest value only -
+    not a growing history) as raw JSON, so nothing is silently dropped.
+    "Last event" above it shows exactly the most recent message,
+    unmodified - every message still updates the cumulative state on the
+    left, even ones that flash by too fast to see individually there. The
+    Board grids'
     row/column layout is inferred (7-wide hex grid, 1-indexed cell
     numbers, row-major) rather than documented anywhere - if a unit's
     rendered position doesn't match reality, that math needs correcting.
@@ -368,6 +372,7 @@
 
   var logEl = document.getElementById("log");
   var stateEl = document.getElementById("state-sections");
+  var otherDataEl = document.getElementById("other-data");
   var statStripEl = document.getElementById("stat-strip");
   var statusDot = document.getElementById("status-dot");
   var statusText = document.getElementById("status-text");
@@ -628,7 +633,7 @@
       // Traits with no tier data (unknown to nameMaps) sort last rather
       // than first, since Infinity beats any real cap value.
       var maxTierValue = maxTier ? maxTier.min_units : Infinity;
-      return { maxTierValue: maxTierValue, count: count, html:
+      return { active: active, maxTierValue: maxTierValue, count: count, html:
         '<div class="trait-row' + (active ? " active" : "") + tierClass + '">' +
           '<div class="trait-row-icon-wrap">' + icon + '<span class="trait-row-count">' + count + "</span></div>" +
           '<div class="trait-row-text"><div class="trait-row-name">' + escapeHtml(name) +
@@ -636,9 +641,11 @@
         "</div>" };
     });
 
-    // Smallest cap first (e.g. a "1/1" unique trait before a "5/11" one),
-    // ties broken by unit count descending.
+    // Active traits first, inactive ones pushed to the bottom; within each
+    // group, smallest cap first (e.g. a "1/1" unique trait before a
+    // "5/11" one), ties broken by unit count descending.
     rows.sort(function (a, b) {
+      if (a.active !== b.active) return a.active ? -1 : 1;
       if (a.maxTierValue !== b.maxTierValue) return a.maxTierValue - b.maxTierValue;
       return b.count - a.count;
     });
@@ -831,6 +838,7 @@
   function renderState() {
     if (!Object.keys(info).length) {
       stateEl.innerHTML = '<div class="empty">No data yet - waiting on the consumer/proxy bridge.</div>';
+      otherDataEl.innerHTML = "";
       return;
     }
     stateEl.innerHTML = [
@@ -840,8 +848,8 @@
       renderRoster(),
       renderAllPlayers(),
       renderRoundOutcome(),
-      renderOtherData(),
     ].join("");
+    otherDataEl.innerHTML = renderOtherData();
   }
 
   // -- Last event (right pane): just the most recent message, not a log --
