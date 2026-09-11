@@ -29,11 +29,23 @@ logger = logging.getLogger(__name__)
 WEBAPP_DIR = Path(__file__).resolve().parent.parent / "webapp"
 HISTORY_SIZE = 200
 DEFAULT_PORT = 8765
+CLIENT_SEND_TIMEOUT_SECONDS = 3
 
 
 class EventRelay:
     """Fans out messages to every connected client and replays recent
-    history to new connections, so a tab opened mid-match isn't blank."""
+    history to new connections, so a tab opened mid-match isn't blank.
+
+    broadcast() is called from inside the *sender's* own websocket_handler
+    loop (the bridge's connection, for every real message it forwards) -
+    so a single slow-to-drain client (a suspended browser tab, a closed
+    laptop lid) blocking on send_str() with no timeout doesn't just fail
+    for that one client, it stalls the loop reading the bridge's *next*
+    message too, which backs up all the way to the bridge's own
+    send_str() via TCP backpressure and looks like the whole bridge has
+    hung. Every client send is therefore bounded by a timeout and
+    dispatched concurrently, so one bad client can't block delivery to
+    the others or delay the sender."""
 
     def __init__(self, history_size: int = HISTORY_SIZE):
         self._clients: set[web.WebSocketResponse] = set()
@@ -42,21 +54,31 @@ class EventRelay:
     async def register(self, ws: web.WebSocketResponse) -> None:
         self._clients.add(ws)
         for raw in self._history:
-            await ws.send_str(raw)
+            try:
+                await asyncio.wait_for(ws.send_str(raw), timeout=CLIENT_SEND_TIMEOUT_SECONDS)
+            except Exception:
+                logger.warning("Dropping client during history replay (slow or disconnected)")
+                self._clients.discard(ws)
+                return
 
     def unregister(self, ws: web.WebSocketResponse) -> None:
         self._clients.discard(ws)
 
+    async def _send_or_none(self, client: web.WebSocketResponse, raw: str) -> web.WebSocketResponse | None:
+        try:
+            await asyncio.wait_for(client.send_str(raw), timeout=CLIENT_SEND_TIMEOUT_SECONDS)
+            return None
+        except Exception:
+            return client  # caller drops it as stale
+
     async def broadcast(self, raw: str) -> None:
         self._history.append(raw)
-        stale = []
-        for client in self._clients:
-            try:
-                await client.send_str(raw)
-            except ConnectionResetError:
-                stale.append(client)
+        if not self._clients:
+            return
+        stale = await asyncio.gather(*(self._send_or_none(client, raw) for client in self._clients))
         for client in stale:
-            self._clients.discard(client)
+            if client is not None:
+                self._clients.discard(client)
 
     @property
     def client_count(self) -> int:

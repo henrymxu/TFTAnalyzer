@@ -77,6 +77,7 @@ except AttributeError:  # older aiohttp without ClientWSTimeout
     _WS_CONNECT_TIMEOUT = 3
 
 RECONNECT_COOLDOWN_SECONDS = 3
+SEND_TIMEOUT_SECONDS = 3
 
 
 class RelaySender:
@@ -112,7 +113,16 @@ class RelaySender:
         connection, first replays `history_before` (in order, ahead of
         `entry`) - so the dashboard catches up immediately on reconnect
         instead of sitting blank until the next sparse game event, even
-        though the bridge itself has been working fine the whole time."""
+        though the bridge itself has been working fine the whole time.
+
+        Every send_str() is bounded by SEND_TIMEOUT_SECONDS: without a
+        timeout, a relay server that stops draining this socket (e.g.
+        stuck relaying to a slow browser tab) would hang this call
+        forever, which stalls the caller's whole read-from-consumer.exe
+        loop right along with it - looking exactly like the bridge itself
+        had frozen, even though consumer.exe kept producing output the
+        whole time. A timeout here is treated the same as any other lost
+        connection: drop it and reconnect on the next call."""
         was_connected = self._ws is not None and not self._ws.closed
         if not await self._ensure_connected():
             return False
@@ -122,8 +132,8 @@ class RelaySender:
                 if history_before:
                     print(f"Backfilling {len(history_before)} entries to the relay server...")
                     for old_entry in history_before:
-                        await self._ws.send_str(json.dumps(old_entry))
-            await self._ws.send_str(json.dumps(entry))
+                        await asyncio.wait_for(self._ws.send_str(json.dumps(old_entry)), timeout=SEND_TIMEOUT_SECONDS)
+            await asyncio.wait_for(self._ws.send_str(json.dumps(entry)), timeout=SEND_TIMEOUT_SECONDS)
             return True
         except Exception:
             if was_connected:

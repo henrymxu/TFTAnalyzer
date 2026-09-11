@@ -1,9 +1,12 @@
+import asyncio
 import json
+import time
 
+import tft.overwolf_server as overwolf_server
 from tft.models.champion import Champion
 from tft.models.item import Item
 from tft.models.trait import Trait, TraitTier
-from tft.overwolf_server import build_name_maps, create_app
+from tft.overwolf_server import EventRelay, build_name_maps, create_app
 
 
 class _FakeCDragonClient:
@@ -103,6 +106,44 @@ async def test_static_index_is_served(aiohttp_client):
     assert resp.status == 200
     body = await resp.text()
     assert "TFT Events Dashboard" in body
+
+
+class _HangingClient:
+    """Simulates a client whose send_str() never returns - e.g. a
+    suspended browser tab that stopped draining its socket."""
+
+    async def send_str(self, raw):
+        await asyncio.sleep(3600)
+
+
+class _FastClient:
+    def __init__(self):
+        self.received = []
+
+    async def send_str(self, raw):
+        self.received.append(raw)
+
+
+async def test_broadcast_does_not_block_on_a_slow_client(monkeypatch):
+    # A real hang would take forever to actually test - shorten the
+    # timeout so the test itself stays fast.
+    monkeypatch.setattr(overwolf_server, "CLIENT_SEND_TIMEOUT_SECONDS", 0.05)
+    relay = EventRelay()
+    hanging = _HangingClient()
+    fast = _FastClient()
+    relay._clients = {hanging, fast}
+
+    start = time.monotonic()
+    await relay.broadcast("hello")
+    elapsed = time.monotonic() - start
+
+    # Bounded by the (patched, short) per-client timeout - not the hang -
+    # and dispatched concurrently, so it isn't the sum of both clients'
+    # timeouts either.
+    assert elapsed < 1
+    assert fast.received == ["hello"]
+    assert hanging not in relay._clients
+    assert fast in relay._clients
 
 
 async def test_broadcasts_message_to_other_connected_clients(aiohttp_client):
