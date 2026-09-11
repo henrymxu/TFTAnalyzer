@@ -108,6 +108,20 @@
     margin-left: 6px;
   }
   .badge.on { background: rgba(62, 207, 142, 0.15); color: var(--good); }
+  .badge[hidden] { display: none; }
+  #demo-badge { background: rgba(77, 163, 255, 0.15); color: var(--accent); }
+
+  .demo-btn {
+    margin-left: auto;
+    background: #1e222c;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .demo-btn:hover { border-color: var(--accent); }
 
   .hex-grid { display: flex; flex-direction: column; gap: 4px; overflow-x: auto; }
   .hex-row { display: flex; gap: 4px; }
@@ -175,6 +189,8 @@
     <div class="dot" id="status-dot"></div>
     <h1>TFT Events Dashboard</h1>
     <span id="status-text">connecting...</span>
+    <span class="badge" id="demo-badge" hidden>demo data</span>
+    <button id="demo-btn" class="demo-btn" type="button">Load demo</button>
   </header>
 
   <div class="stat-strip" id="stat-strip"></div>
@@ -205,11 +221,24 @@
     Champion/item names are looked up against Community Dragon's TFT data
     (fetched once from <code>/names.json</code>) with a heuristic cleanup
     fallback for anything not found there, like PvE-variant names.
+    "Load demo" replays a small anonymized excerpt from a real captured
+    session through every renderer above, so this page shows something
+    even with no bridge, no relay server data, and no game running.
   </p>
 
 <script>
 (function () {
   "use strict";
+
+  // Curated, anonymized excerpt from a real captured TFT session (see
+  // tft/consumer_log_parser.py / tools/consumer_bridge.py --replay for the
+  // full pipeline this came through) - one representative sample per
+  // dashboard section, so "Load demo" works with zero setup: no bridge,
+  // no relay server dependency on live data, not even a network
+  // connection required beyond this page having already loaded. Other
+  // players' real summoner names from that session were replaced with
+  // placeholders before this was committed.
+  var DEMO_ENTRIES = [{"seq":1,"ts":1735689600000,"kind":"info_update","payload":{"category":"game_info","key":"tft_roster","value":[{"summoner":"DemoPlayer","tag_line":"DEMO","index":"6","health":"56","xp":"10","localplayer":"1","rank":"0"},{"summoner":"RiverKing","tag_line":"DEMO","index":"3","health":"-15","xp":"9","localplayer":"0","rank":"2"},{"summoner":"ShadowBlade","tag_line":"DEMO","index":"0","health":"0","xp":"7","localplayer":"0","rank":"3"},{"summoner":"IronClad","tag_line":"DEMO","index":"4","health":"0","xp":"8","localplayer":"0","rank":"4"},{"summoner":"NightOwl","tag_line":"DEMO","index":"2","health":"0","xp":"8","localplayer":"0","rank":"5"},{"summoner":"StormCaller","tag_line":"DEMO","index":"5","health":"0","xp":"8","localplayer":"0","rank":"6"},{"summoner":"SilverFang","tag_line":"DEMO","index":"1","health":"0","xp":"7","localplayer":"0","rank":"7"},{"summoner":"QuietStorm","tag_line":"DEMO","index":"7","health":"0","xp":"8","localplayer":"0","rank":"8"}]}},{"seq":2,"ts":1735689601500,"kind":"info_update","payload":{"category":"game_info","key":"tft_xp","value":{"xp_level":"10","xp_progress":"0","xp_progress_max":"2"}}},{"seq":3,"ts":1735689603000,"kind":"info_update","payload":{"category":"game_info","key":"tft_round","value":{"round_type":"DA_Round_Combat","stage":"6-2"}}},{"seq":4,"ts":1735689604500,"kind":"info_update","payload":{"category":"game_info","key":"tft_opp","value":"ShadowBlade#DEMO"}},{"seq":5,"ts":1735689606000,"kind":"info_update","payload":{"category":"game_info","key":"tft_board","value":{"cell_1":{"name":"DA_Draven18","level":"2","item_1":"DA_GiantSlayer","item_2":"DA_KrakensFury","item_3":"DA_InfinityEdge"},"cell_6":{"name":"DA_Lux18_Blossom","level":"2","item_1":"DA_SpearOfShojin","item_2":"","item_3":""},"cell_7":{"name":"DA_18_Ahri","level":"2","item_1":"","item_2":"","item_3":""},"cell_8":{"name":"DA_18_Ashe","level":"2","item_1":"DA_HandOfJustice","item_2":"DA_StrikersFlail","item_3":"DA_SpearOfShojin"},"cell_11":{"name":"DA_18_Ivern","level":"2","item_1":"","item_2":"","item_3":""},"cell_12":{"name":"DA_Karma18","level":"1","item_1":"DA_EdgeOfNight","item_2":"DA_Morellonomicon","item_3":""},"cell_21":{"name":"DA_18_MasterYi_AP","level":"1","item_1":"","item_2":"","item_3":""},"cell_24":{"name":"DA_Taric18","level":"2","item_1":"DA_Crownguard","item_2":"DA_Evenshroud","item_3":"DA_SpiritVisage"},"cell_25":{"name":"DA_18_Maokai","level":"2","item_1":"DA_SpiritVisage","item_2":"DA_WarmogsArmor","item_3":"DA_GargoyleStoneplate"},"cell_26":{"name":"DA_18_Yorick","level":"1","item_1":"","item_2":"","item_3":""}}}},{"seq":6,"ts":1735689607500,"kind":"info_update","payload":{"category":"game_info","key":"tft_bench","value":{"cell_1":{"name":"DA_Taric18","level":"1","item_1":"","item_2":"","item_3":""},"cell_2":{"name":"DA_Taric18","level":"1","item_1":"","item_2":"","item_3":""},"cell_8":{"name":"DA_Draven18","level":"1","item_1":"","item_2":"","item_3":""},"cell_9":{"name":"DA_18_Maokai","level":"2","item_1":"","item_2":"","item_3":""}}}},{"seq":7,"ts":1735689609000,"kind":"info_update","payload":{"category":"game_info","key":"tft_board_opponent","value":{"cell_10":{"name":"DA_18_Alune","level":"2","item_1":"","item_2":"","item_3":""},"cell_15":{"name":"DA_Brambleback18","level":"2","item_1":"DA_SteadfastHeart","item_2":"DA_Component_RecurveBow","item_3":"DA_TitansResolve"},"cell_19":{"name":"DA_18_Diana","level":"2","item_1":"DA_TitansResolve","item_2":"","item_3":""},"cell_23":{"name":"DA_18_Camille","level":"2","item_1":"","item_2":"","item_3":""},"cell_24":{"name":"DA_18_Warwick","level":"3","item_1":"DA_SpearOfShojin","item_2":"DA_TitansResolve","item_3":"DA_Artifact_GamblersBlade"},"cell_25":{"name":"DA_18_RekSai","level":"1","item_1":"DA_Evenshroud","item_2":"DA_SunfireCape","item_3":"DA_SteadfastHeart"},"cell_26":{"name":"DA_Murkwolf18","level":"3","item_1":"DA_InfinityEdge","item_2":"DA_SteraksGage","item_3":"DA_TitansResolve"},"cell_27":{"name":"DA_18_Akali_AD","level":"2","item_1":"","item_2":"","item_3":""}}}},{"seq":8,"ts":1735689610500,"kind":"info_update","payload":{"category":"game_info","key":"tft_item_select","value":{"item_1":{"name":"DA_DravenUniqueTrait18_BountyAttackAmount"},"item_2":{"name":"DA_DravenUniqueTrait18_BountyMostDamage"},"item_3":{"name":"DA_DravenUniqueTrait18_BountyDamageAmountHard"}}}},{"seq":9,"ts":1735689612000,"kind":"info_update","payload":{"category":"game_info","key":"tft_carousel","value":{"slot_1":{"name":"DA_CrimsonRaptor18","item_1":"DA_HextechGunblade","item_2":""},"slot_2":{"name":"DA_Taric18","item_1":"DA_SpiritVisage","item_2":""},"slot_3":{"name":"DA_18_Sett","item_1":"DA_WarmogsArmor","item_2":""},"slot_4":{"name":"DA_Brambleback18","item_1":"DA_DragonsClaw","item_2":""},"slot_5":{"name":"DA_18_Alune","item_1":"DA_18_EmblemFae","item_2":""},"slot_6":{"name":"DA_18_Morgana","item_1":"DA_GargoyleStoneplate","item_2":""},"slot_7":{"name":"DA_Vi18","item_1":"DA_SpearOfShojin","item_2":""},"slot_8":{"name":"DA_18_Hecarim","item_1":"DA_SteraksGage","item_2":""},"slot_9":{"name":"DA_18_Kennen","item_1":"DA_18_EmblemElderwood","item_2":""}}}},{"seq":10,"ts":1735689613500,"kind":"info_update","payload":{"category":"game_info","key":"tft_item_bench","value":[{"summoner":"RiverKing","tag_line":"DEMO","bench_items":[{"name":"DA_Reforger","count":3},{"name":"DA_Consumable_ItemRemover","count":7},{"name":"DA_Riftbeast18_Selector","count":1}]},{"summoner":"DemoPlayer","tag_line":"DEMO","bench_items":[{"name":"DA_Reforger","count":3},{"name":"DA_Component_ChainVest","count":1},{"name":"DA_Consumable_ItemRemover","count":1},{"name":"DA_GiantSlayer","count":1}]},{"summoner":"ShadowBlade","tag_line":"DEMO","bench_items":[{"name":"DA_Consumable_ItemRemover","count":3}]},{"summoner":"IronClad","tag_line":"DEMO","bench_items":[]},{"summoner":"NightOwl","tag_line":"DEMO","bench_items":[]},{"summoner":"StormCaller","tag_line":"DEMO","bench_items":[]},{"summoner":"SilverFang","tag_line":"DEMO","bench_items":[]},{"summoner":"QuietStorm","tag_line":"DEMO","bench_items":[]}]}},{"seq":11,"ts":1735689615000,"kind":"info_update","payload":{"category":"game_info","key":"tft_gold","value":56}},{"seq":12,"ts":1735689616500,"kind":"info_update","payload":{"category":"game_info","key":"tft_gold","value":9}},{"seq":13,"ts":1735689618000,"kind":"info_update","payload":{"category":"game_info","key":"tft_gold","value":7}},{"seq":14,"ts":1735689619500,"kind":"event","payload":{"name":"tft_shop_visible","value":false}},{"seq":15,"ts":1735689621000,"kind":"info_update","payload":{"category":"game_info","key":"tft_combat","value":"combat_end"}},{"seq":16,"ts":1735689622500,"kind":"info_update","payload":{"category":"game_info","key":"tft_damage","value":{"unit_0":{"name":"DA_Draven18","damage":"3870","level":"2"},"unit_1":{"name":"DA_18_MasterYi_AP","damage":"154","level":"1"},"unit_2":{"name":"DA_18_Ivern","damage":"941","level":"2"},"unit_3":{"name":"DA_Karma18","damage":"1567","level":"1"},"unit_4":{"name":"DA_18_Yorick","damage":"92","level":"1"},"unit_5":{"name":"DA_18_Maokai","damage":"3628","level":"2"},"unit_6":{"name":"DA_18_Ashe","damage":"6969","level":"2"},"unit_7":{"name":"DA_Taric18","damage":"1689","level":"2"},"unit_8":{"name":"DA_18_Ahri","damage":"1958","level":"2"},"unit_9":{"name":"DA_Lux18_Blossom","damage":"3911","level":"2"}}}},{"seq":17,"ts":1735689624000,"kind":"info_update","payload":{"category":"game_info","key":"tft_damage_tracker","value":[{"team":0,"units":[{"name":"DA_Draven18","true_dmg":0,"phy_dmg":3870,"mag_dmg":0,"total_dmg":3870,"true_blocked":0,"mag_blocked":0,"phy_blocked":0,"total_blocked":0,"shielded":0,"healed":0},{"name":"DA_18_MasterYi_AP","true_dmg":0,"phy_dmg":25,"mag_dmg":129,"total_dmg":154,"true_blocked":0,"mag_blocked":0,"phy_blocked":526,"total_blocked":526,"shielded":0,"healed":45},{"name":"DA_18_Ivern","true_dmg":0,"phy_dmg":451,"mag_dmg":490,"total_dmg":941,"true_blocked":0,"mag_blocked":110,"phy_blocked":0,"total_blocked":110,"shielded":1050,"healed":0},{"name":"DA_Karma18","true_dmg":386,"phy_dmg":92,"mag_dmg":1089,"total_dmg":1567,"true_blocked":0,"mag_blocked":77,"phy_blocked":310,"total_blocked":387,"shielded":0,"healed":64},{"name":"DA_18_Yorick","true_dmg":0,"phy_dmg":92,"mag_dmg":0,"total_dmg":92,"true_blocked":0,"mag_blocked":0,"phy_blocked":954,"total_blocked":954,"shielded":0,"healed":0},{"name":"DA_18_Maokai","true_dmg":0,"phy_dmg":370,"mag_dmg":3258,"total_dmg":3628,"true_blocked":0,"mag_blocked":493,"phy_blocked":7726,"total_blocked":8219,"shielded":0,"healed":1038},{"name":"DA_18_Ashe","true_dmg":0,"phy_dmg":6969,"mag_dmg":0,"total_dmg":6969,"true_blocked":0,"mag_blocked":0,"phy_blocked":0,"total_blocked":0,"shielded":0,"healed":0},{"name":"DA_Taric18","true_dmg":0,"phy_dmg":456,"mag_dmg":1233,"total_dmg":1689,"true_blocked":0,"mag_blocked":770,"phy_blocked":284,"total_blocked":1054,"shielded":747,"healed":7},{"name":"DA_18_Ahri","true_dmg":0,"phy_dmg":428,"mag_dmg":1530,"total_dmg":1958,"true_blocked":0,"mag_blocked":0,"phy_blocked":378,"total_blocked":378,"shielded":0,"healed":0},{"name":"DA_Lux18_Blossom","true_dmg":0,"phy_dmg":362,"mag_dmg":3549,"total_dmg":3911,"true_blocked":0,"mag_blocked":0,"phy_blocked":340,"total_blocked":340,"shielded":0,"healed":0}]}]}},{"seq":18,"ts":1735689625500,"kind":"info_update","payload":{"category":"game_info","key":"tft_round_outcome","value":[{"summoner":"DemoPlayer","tag_line":"DEMO","round_outcome":"defeat","localplayer":"1"},{"summoner":"RiverKing","tag_line":"DEMO","round_outcome":"defeat","localplayer":"0"},{"summoner":"ShadowBlade","tag_line":"DEMO","round_outcome":"victory","localplayer":"0"}]}},{"seq":19,"ts":1735689627000,"kind":"info_update","payload":{"category":"game_info","key":"tft_match","value":"match_end"}}];
 
   // Real field names, captured from an actual TFT session run through
   // Overwolf's game-events-sdk `consumer.exe` (see
@@ -230,6 +259,8 @@
   var statStripEl = document.getElementById("stat-strip");
   var statusDot = document.getElementById("status-dot");
   var statusText = document.getElementById("status-text");
+  var demoBadge = document.getElementById("demo-badge");
+  var demoBtn = document.getElementById("demo-btn");
 
   var info = {};    // "game_info.tft_gold" -> { ts, value }
   var events = {};  // event name -> { ts, value }
@@ -570,6 +601,44 @@
     renderState();
     renderStatStrip();
   }
+
+  // -- Demo mode: replays the bundled sample data through the exact same
+  // handleEntry() pipeline as live messages, so every renderer gets
+  // exercised without needing a bridge, a relay server's live stream, or
+  // even a game running at all. --------------------------------------
+
+  var DEMO_STEP_MS = 350;
+  var demoTimer = null;
+
+  function stopDemo() {
+    if (demoTimer !== null) {
+      clearTimeout(demoTimer);
+      demoTimer = null;
+    }
+  }
+
+  function startDemo() {
+    stopDemo();
+    info = {};
+    events = {};
+    pendingEntries = [];
+    demoBadge.hidden = false;
+    demoBtn.textContent = "Restart demo";
+
+    var i = 0;
+    function step() {
+      if (i >= DEMO_ENTRIES.length) {
+        demoTimer = null;
+        return;
+      }
+      handleEntry(DEMO_ENTRIES[i]);
+      i += 1;
+      demoTimer = setTimeout(step, DEMO_STEP_MS);
+    }
+    step();
+  }
+
+  demoBtn.addEventListener("click", startDemo);
 
   function setStatus(connected, text) {
     statusDot.className = "dot" + (connected ? " connected" : "");
