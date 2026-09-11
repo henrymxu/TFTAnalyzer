@@ -409,9 +409,16 @@
   // tft_damage_tracker). A combat round can deliver many messages within
   // a few milliseconds of each other, and re-rendering synchronously on
   // every single one makes the UI visibly fall behind until it churns
-  // through the backlog. Coalescing to at most once per animation frame
-  // keeps every message applied to the cumulative state, while only the
-  // last one in a batch needs its own display.
+  // through the backlog. Coalescing keeps every message applied to the
+  // cumulative state, while only the last one in a batch needs its own
+  // display.
+  //
+  // Deliberately setTimeout, not requestAnimationFrame - this dashboard's
+  // whole point is running in a background/unfocused tab while playing
+  // the game in another window, and browsers throttle or fully suspend
+  // rAF callbacks for backgrounded tabs, which would silently stall
+  // rendering entirely rather than just delaying it.
+  var RENDER_INTERVAL_MS = 200;
   var pendingEntries = [];
   var renderScheduled = false;
 
@@ -419,7 +426,7 @@
     pendingEntries.push(entry);
     if (!renderScheduled) {
       renderScheduled = true;
-      requestAnimationFrame(flushPending);
+      setTimeout(flushPending, RENDER_INTERVAL_MS);
     }
   }
 
