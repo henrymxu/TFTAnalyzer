@@ -169,10 +169,6 @@
   .item-icon { width: 16px; height: 16px; border-radius: 3px; object-fit: cover; }
   .item-text { color: var(--muted); font-size: 9px; }
 
-  .bench-player { margin-bottom: 10px; }
-  .bench-player:last-child { margin-bottom: 0; }
-  .bench-player-name { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
-
   .player-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .player-tab {
     background: #1e222c;
@@ -318,22 +314,24 @@
     each trait's tier thresholds from Community Dragon, matched by trait
     display name rather than internal apiName - that's what a champion's
     own trait list actually contains - and shown as a vertical icon
-    sidebar to the left of that board (your board, the opponent's, and
-    each player's board under "All players"), same as TFT's own trait
-    tracker. The augment/item choice card checks
+    sidebar to the left of that board, sorted by tier cap ascending, same
+    as TFT's own trait tracker. The augment/item choice card checks
     Community Dragon's augment table before its item table, since TFT
     reuses the same <code>tft_item_select</code> key for both; augments
     are items flagged <code>isAugment</code> in Community Dragon's data,
     not a separate table. Both were verified against a live fetch of
     Community Dragon's data, though not against a live TFT match from this
-    environment. "All players" reads <code>tft_board_players</code> (a
-    periodic snapshot of every player's board/bench/items, only the
-    latest one is shown) and lets you flip through each player's board,
-    bench, and item bench by tab - useful for scouting without waiting to
-    face them. "Load demo" replays a small anonymized excerpt from a real
-    captured session through every renderer above, so this page shows
-    something even with no bridge, no relay server data, and no game
-    running.
+    environment. Every player's board, bench, and item bench - including
+    your own and the current opponent's - live under "All players", one
+    tab each, rather than separate dedicated cards; the board/bench there
+    come from <code>tft_board_players</code> (a periodic whole-lobby
+    snapshot, only the latest one is shown) instead of the
+    <code>tft_board</code>/<code>tft_bench</code> keys, which still update
+    every round but are otherwise only visible as raw JSON under "Other
+    live data" now. "Load demo" replays a small anonymized excerpt from a
+    real captured session through every renderer above, so this page
+    shows something even with no bridge, no relay server data, and no
+    game running.
   </p>
 
 <script>
@@ -364,9 +362,8 @@
   // being dropped or duplicated.
   var DEDICATED_KEYS = [
     "tft_gold", "tft_xp", "tft_round", "tft_match", "tft_combat", "tft_opp",
-    "tft_shop", "tft_board", "tft_bench", "tft_board_opponent",
-    "tft_roster", "tft_item_select", "tft_carousel", "tft_round_outcome",
-    "tft_item_bench", "tft_board_players",
+    "tft_shop", "tft_roster", "tft_item_select", "tft_carousel",
+    "tft_round_outcome", "tft_item_bench", "tft_board_players",
   ];
 
   var logEl = document.getElementById("log");
@@ -628,7 +625,10 @@
       var icon = known && known.icon
         ? '<img class="trait-row-icon" src="' + escapeHtml(known.icon) + '" alt="" loading="lazy">'
         : '<div class="trait-row-icon"></div>';
-      return { count: count, active: active, html:
+      // Traits with no tier data (unknown to nameMaps) sort last rather
+      // than first, since Infinity beats any real cap value.
+      var maxTierValue = maxTier ? maxTier.min_units : Infinity;
+      return { maxTierValue: maxTierValue, count: count, html:
         '<div class="trait-row' + (active ? " active" : "") + tierClass + '">' +
           '<div class="trait-row-icon-wrap">' + icon + '<span class="trait-row-count">' + count + "</span></div>" +
           '<div class="trait-row-text"><div class="trait-row-name">' + escapeHtml(name) +
@@ -636,24 +636,14 @@
         "</div>" };
     });
 
-    // Active traits first (most units first), then inactive ones, mirroring
-    // how TFT's own trait tracker orders the list.
+    // Smallest cap first (e.g. a "1/1" unique trait before a "5/11" one),
+    // ties broken by unit count descending.
     rows.sort(function (a, b) {
-      if (a.active !== b.active) return a.active ? -1 : 1;
+      if (a.maxTierValue !== b.maxTierValue) return a.maxTierValue - b.maxTierValue;
       return b.count - a.count;
     });
 
     return '<div class="trait-sidebar">' + rows.map(function (r) { return r.html; }).join("") + "</div>";
-  }
-
-  function renderBoardSection(title, key, flipRows) {
-    var value = infoValue(key);
-    var body = renderBoardGrid(value, flipRows);
-    var sidebar = renderTraitSidebar(value);
-    var content = body
-      ? (sidebar ? '<div class="board-with-traits">' + sidebar + body + "</div>" : body)
-      : '<div class="empty">No data yet.</div>';
-    return '<div class="subcard"><h3>' + escapeHtml(title) + '</h3>' + content + "</div>";
   }
 
   // -- Shop: {slot_N: {name}}, plus the tft_shop_visible event as a badge --
@@ -669,13 +659,6 @@
       return '<div class="slot">' + championSlotVisual(shop[k] && shop[k].name) + "</div>";
     }).join("");
     return '<div class="subcard"><h3>Shop' + badge + '</h3><div class="slots">' + slots + "</div></div>";
-  }
-
-  function renderCellSection(title, key) {
-    var value = infoValue(key);
-    var body = renderCellMap(value);
-    return '<div class="subcard"><h3>' + escapeHtml(title) + '</h3>' +
-      (body || '<div class="empty">No data yet.</div>') + "</div>";
   }
 
   // -- Roster: array of {summoner, tag_line, index, health, xp, localplayer, rank} --
@@ -740,19 +723,6 @@
       var count = it.count > 1 ? '<div class="slot-count">x' + escapeHtml(String(it.count)) + "</div>" : "";
       return '<div class="slot">' + (icon ? icon + '<div class="slot-label">' + escapeHtml(label) + "</div>" : escapeHtml(label)) + count + "</div>";
     }).join("");
-  }
-
-  function renderItemBench() {
-    var value = infoValue("tft_item_bench");
-    if (!Array.isArray(value) || !value.length) {
-      return '<div class="subcard"><h3>Item bench</h3><div class="empty">No item bench data yet.</div></div>';
-    }
-    var players = value.map(function (p) {
-      var slots = itemBenchSlotsHtml(Array.isArray(p.bench_items) ? p.bench_items : []);
-      return '<div class="bench-player"><div class="bench-player-name">' + escapeHtml(p.summoner || "?") +
-        '</div><div class="slots">' + slots + "</div></div>";
-    }).join("");
-    return '<div class="subcard"><h3>Item bench</h3>' + players + "</div>";
   }
 
   // -- All players: tft_board_players is a list of periodic whole-lobby
@@ -865,12 +835,8 @@
     }
     stateEl.innerHTML = [
       renderShop(),
-      renderBoardSection("Board", "tft_board", true),
-      renderCellSection("Bench", "tft_bench"),
-      renderItemBench(),
       renderItemSelect(),
       renderCarousel(),
-      renderBoardSection("Opponent's board", "tft_board_opponent"),
       renderRoster(),
       renderAllPlayers(),
       renderRoundOutcome(),
