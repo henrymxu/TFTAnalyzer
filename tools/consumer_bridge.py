@@ -6,8 +6,11 @@ a plain console tool anyone can run.
 
 Two modes:
 
-    python -m tools.consumer_bridge --exe path\\to\\consumer.exe
-        Launches consumer.exe, reads its stdout live, streams parsed
+    python -m tools.consumer_bridge --exe path\\to\\consumer.exe [--game-id 21570]
+        Launches consumer.exe with TFT's game id as its one required
+        argument (found empirically: it exits immediately printing
+        "Missing parameter: [game id]" if omitted - not documented
+        anywhere by Overwolf), reads its stdout live, streams parsed
         records to the relay server, and periodically saves them to a
         local JSON file (durable record, same role events.json played
         in the Overwolf-app version of this pipeline).
@@ -150,10 +153,10 @@ async def run(lines_iter: Iterable[str], verbose: bool = False) -> None:
         await session.close()
 
 
-def iter_subprocess_lines(exe_path: Path) -> Iterator[str]:
-    print(f"Launching {exe_path} ...")
+def iter_subprocess_lines(exe_path: Path, game_id: int) -> Iterator[str]:
+    print(f"Launching {exe_path} {game_id} ...")
     process = subprocess.Popen(
-        [str(exe_path)],
+        [str(exe_path), str(game_id)],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -183,6 +186,14 @@ def main() -> None:
     group.add_argument("--exe", type=Path, help="Path to consumer.exe to launch and read live.")
     group.add_argument("--replay", type=Path, help="Path to a previously captured text log to replay.")
     parser.add_argument(
+        "--game-id",
+        type=int,
+        default=21570,
+        help="TFT's Overwolf game/class id, passed to consumer.exe (default: 21570, "
+        "TFT's current dedicated id per Overwolf's docs at time of writing - try 5426, "
+        "the older shared League/TFT id, if that one comes back empty).",
+    )
+    parser.add_argument(
         "--replay-delay", type=float, default=0.0, help="Seconds to sleep between replayed lines (default: as fast as possible)."
     )
     parser.add_argument(
@@ -190,7 +201,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    lines_iter = iter_subprocess_lines(args.exe) if args.exe else iter_file_lines(args.replay, args.replay_delay)
+    lines_iter = (
+        iter_subprocess_lines(args.exe, args.game_id) if args.exe else iter_file_lines(args.replay, args.replay_delay)
+    )
 
     try:
         asyncio.run(run(lines_iter, verbose=args.verbose))
