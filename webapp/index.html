@@ -132,12 +132,12 @@
   }
 
   #log {
-    height: 70vh;
+    max-height: 70vh;
     overflow-y: auto;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 12px;
   }
-  .log-entry { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .log-entry { padding: 6px 0; }
   .log-entry .meta { color: var(--muted); }
   .kind-event { color: var(--accent); }
   .kind-info_update { color: var(--good); }
@@ -167,7 +167,7 @@
       <div id="state-sections"><div class="empty">No data yet - waiting on the consumer/proxy bridge.</div></div>
     </section>
     <section class="pane">
-      <h2>Raw event log</h2>
+      <h2>Last event</h2>
       <div id="log"><div class="empty">No events yet.</div></div>
     </section>
   </main>
@@ -177,9 +177,10 @@
     actual TFT session (game_info.tft_gold, tft_shop, tft_board, tft_bench,
     tft_roster, tft_item_select, tft_carousel, etc). Anything captured that
     isn't rendered into a dedicated card yet shows up under "Other live
-    data" as raw JSON, so nothing is silently dropped. The raw event log on
-    the right is always accurate regardless: it's exactly what was
-    streamed, unmodified.
+    data" as raw JSON, so nothing is silently dropped. "Last event" on the
+    right shows exactly the most recent message, unmodified - every
+    message still updates the cumulative state on the left, even ones
+    that flash by too fast to see individually there.
   </p>
 
 <script>
@@ -200,8 +201,6 @@
     "tft_roster", "tft_item_select", "tft_carousel", "tft_round_outcome",
   ];
 
-  var MAX_LOG_ENTRIES = 500;
-
   var logEl = document.getElementById("log");
   var stateEl = document.getElementById("state-sections");
   var statStripEl = document.getElementById("stat-strip");
@@ -210,7 +209,6 @@
 
   var info = {};    // "game_info.tft_gold" -> { ts, value }
   var events = {};  // event name -> { ts, value }
-  var logEntries = [];
 
   function infoValue(key) {
     var entry = info["game_info." + key];
@@ -398,38 +396,51 @@
     ].join("");
   }
 
-  // -- Raw log (right pane) - always exactly what was streamed --
+  // -- Last event (right pane): just the most recent message, not a log --
 
-  function appendLogEntry(entry) {
-    logEntries.push(entry);
-    if (logEntries.length > MAX_LOG_ENTRIES) logEntries.shift();
-
-    var div = document.createElement("div");
-    div.className = "log-entry";
-    div.innerHTML = '<span class="meta">#' + entry.seq + " " + formatTime(entry.ts) +
+  function renderLastEvent(entry) {
+    logEl.innerHTML = '<div class="log-entry"><span class="meta">#' + entry.seq + " " + formatTime(entry.ts) +
       '</span> <span class="kind-' + escapeHtml(entry.kind) + '">[' + escapeHtml(entry.kind) + "]</span>" +
-      "<pre>" + escapeHtml(JSON.stringify(entry.payload)) + "</pre>";
-
-    var wasEmpty = logEl.querySelector(".empty");
-    if (wasEmpty) logEl.innerHTML = "";
-    logEl.appendChild(div);
-    while (logEl.children.length > MAX_LOG_ENTRIES) {
-      logEl.removeChild(logEl.firstChild);
-    }
-    logEl.scrollTop = logEl.scrollHeight;
+      "<pre>" + escapeHtml(JSON.stringify(entry.payload, null, 2)) + "</pre></div>";
   }
 
-  function handleEntry(entry) {
-    appendLogEntry(entry);
+  // renderState()/renderStatStrip() rebuild a fair amount of HTML each
+  // call (including re-serializing potentially large nested JSON like
+  // tft_damage_tracker). A combat round can deliver many messages within
+  // a few milliseconds of each other, and re-rendering synchronously on
+  // every single one makes the UI visibly fall behind until it churns
+  // through the backlog. Coalescing to at most once per animation frame
+  // keeps every message applied to the cumulative state, while only the
+  // last one in a batch needs its own display.
+  var pendingEntries = [];
+  var renderScheduled = false;
 
-    if (entry.kind === "info_update" && entry.payload) {
-      var fullKey = entry.payload.category + "." + entry.payload.key;
-      info[fullKey] = { ts: entry.ts, value: entry.payload.value };
-    } else if (entry.kind === "event" && entry.payload) {
-      events[entry.payload.name] = { ts: entry.ts, value: entry.payload.value };
+  function handleEntry(entry) {
+    pendingEntries.push(entry);
+    if (!renderScheduled) {
+      renderScheduled = true;
+      requestAnimationFrame(flushPending);
     }
-    // "lifecycle" entries (e.g. disconnected) are visible in the raw log
-    // but don't currently drive their own UI state.
+  }
+
+  function flushPending() {
+    renderScheduled = false;
+    var batch = pendingEntries;
+    pendingEntries = [];
+
+    batch.forEach(function (entry) {
+      if (entry.kind === "info_update" && entry.payload) {
+        var fullKey = entry.payload.category + "." + entry.payload.key;
+        info[fullKey] = { ts: entry.ts, value: entry.payload.value };
+      } else if (entry.kind === "event" && entry.payload) {
+        events[entry.payload.name] = { ts: entry.ts, value: entry.payload.value };
+      }
+      // "lifecycle" entries (e.g. disconnected) still update "last event"
+      // below but don't drive their own cumulative-state slot.
+    });
+
+    var lastEntry = batch[batch.length - 1];
+    if (lastEntry) renderLastEvent(lastEntry);
 
     renderState();
     renderStatStrip();
