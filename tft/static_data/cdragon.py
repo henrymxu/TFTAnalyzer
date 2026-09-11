@@ -76,16 +76,14 @@ class CDragonClient:
         return [Item.from_cdragon(i) for i in raw.get("items", [])]
 
     def get_augments(self, *, force_refresh: bool = False) -> list[Item]:
-        """Augments live in a set's own "augments" list, separate from the
-        top-level "items" array - same apiName/name/icon shape as an Item
-        as far as we use it, so Item.from_cdragon is reused rather than
-        adding a near-duplicate model. Unverified against live data from
-        this sandbox (no network access here) - if the key name or shape
-        has changed, this degrades to an empty list rather than raising,
-        same as the rest of this client's callers already expect."""
+        """Augments are items in Community Dragon's data model - confirmed
+        against a live fetch, they live in the same top-level "items" array
+        as regular items/completed items, flagged with isAugment=True,
+        rather than in any separate per-set "augments" list (a set's own
+        "augments" field, when present, is just bare apiName strings with
+        no name/icon of their own - not useful here)."""
         raw = self._load_raw(force_refresh)
-        set_data = self._latest_set(raw)
-        return [Item.from_cdragon(a) for a in set_data.get("augments", [])]
+        return [Item.from_cdragon(i) for i in raw.get("items", []) if i.get("isAugment")]
 
     @staticmethod
     def icon_url(icon_path: str) -> str:

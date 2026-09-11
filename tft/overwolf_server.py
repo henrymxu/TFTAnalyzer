@@ -91,20 +91,24 @@ def _icon(icon_path: str | None) -> str | None:
 
 
 def build_name_maps(client: CDragonClient | None = None) -> dict:
-    """Champion/item/augment apiName -> {name, icon}, plus trait apiName ->
-    {name, icon, tiers}, from the same Community Dragon source
+    """Champion/item/augment apiName -> {name, icon}, plus trait display
+    name -> {name, icon, tiers}, from the same Community Dragon source
     tft.static_data already uses - for prettifying the raw internal names
     (e.g. "TFT14_Draven", or PvE-variant names like "DA_Draven18") the
     game events stream carries, for showing real icons instead of text,
     and for computing active/inactive trait synergies from the current
-    board (champions carry their own trait apiNames; the webapp tallies
-    them against each trait's tier thresholds). icon is a directly
-    hotlinkable CDN URL (or None if the set data had none) - the browser
-    loads it straight from Community Dragon, this server never proxies
-    bytes. Each category degrades independently to an empty map (the
-    webapp falls back to a heuristic name cleanup and text-only cells,
-    and simply shows no traits) rather than failing the whole request if
-    Community Dragon isn't reachable or one category's shape changed."""
+    board. Traits are keyed by display name rather than apiName because
+    that's what a champion's own "traits" list actually contains in
+    Community Dragon's data (e.g. Champion.traits has "Elderwood", not
+    the trait's apiName "DA_18_Elderwood") - confirmed against a live
+    fetch, since keying by apiName here silently never matched anything
+    the webapp looked up. icon is a directly hotlinkable CDN URL (or None
+    if the set data had none) - the browser loads it straight from
+    Community Dragon, this server never proxies bytes. Each category
+    degrades independently to an empty map (the webapp falls back to a
+    heuristic name cleanup and text-only cells, and simply shows no
+    traits) rather than failing the whole request if Community Dragon
+    isn't reachable or one category's shape changed."""
     client = client or CDragonClient()
     champions: dict[str, dict] = {}
     items: dict[str, dict] = {}
@@ -127,7 +131,7 @@ def build_name_maps(client: CDragonClient | None = None) -> dict:
         logger.warning("Could not fetch item names from Community Dragon", exc_info=True)
     try:
         for trait in client.get_traits():
-            traits[trait.api_name.lower()] = {
+            traits[trait.display_name.lower()] = {
                 "name": trait.display_name,
                 "icon": _icon(trait.icon_path),
                 "tiers": [{"min_units": t.min_units, "style": t.style} for t in trait.tiers],

@@ -14,7 +14,10 @@ class _FakeCDragonClient:
                 display_name="Draven",
                 cost=1,
                 icon_path="/Assets/Draven.tex",
-                traits=("TFT14_Executioner",),
+                # Community Dragon's champion.traits holds trait *display*
+                # names ("Executioner"), not apiNames - confirmed against a
+                # live fetch.
+                traits=("Executioner",),
             ),
             Champion(api_name="TFT14_NoIcon", display_name="No Icon", cost=1, icon_path=None),
         ]
@@ -55,7 +58,7 @@ def test_build_name_maps_lowercases_api_names_as_keys():
 
     assert maps["champions"]["tft14_draven"]["name"] == "Draven"
     assert maps["champions"]["tft14_draven"]["icon"] == "https://raw.communitydragon.org/latest/game/assets/draven.png"
-    assert maps["champions"]["tft14_draven"]["traits"] == ["TFT14_Executioner"]
+    assert maps["champions"]["tft14_draven"]["traits"] == ["Executioner"]
     assert maps["items"]["tft_item_infinityedge"]["name"] == "Infinity Edge"
     assert maps["items"]["tft_item_infinityedge"]["icon"] == "https://raw.communitydragon.org/latest/game/assets/ie.png"
     assert maps["augments"]["tft9_augment_test"]["name"] == "Test Augment"
@@ -64,7 +67,9 @@ def test_build_name_maps_lowercases_api_names_as_keys():
 def test_build_name_maps_includes_trait_tiers():
     maps = build_name_maps(client=_FakeCDragonClient())
 
-    trait = maps["traits"]["tft14_executioner"]
+    # Keyed by display name, not apiName - that's what a champion's own
+    # "traits" list actually contains, so that's what the webapp looks up.
+    trait = maps["traits"]["executioner"]
     assert trait["name"] == "Executioner"
     assert trait["tiers"] == [{"min_units": 2, "style": "bronze"}, {"min_units": 4, "style": "silver"}]
 
