@@ -55,6 +55,65 @@ try:
 except AttributeError:  # older aiohttp without ClientWSTimeout
     _WS_CONNECT_TIMEOUT = 3
 
+RECONNECT_COOLDOWN_SECONDS = 3
+
+
+class RelaySender:
+    """Sends entries to the relay server, reconnecting on demand instead
+    of giving up permanently after the first failed/lost connection - the
+    relay server (or this bridge) restarting mid-session shouldn't require
+    restarting the other one too."""
+
+    def __init__(self, session: aiohttp.ClientSession):
+        self._session = session
+        self._ws: aiohttp.ClientWebSocketResponse | None = None
+        self._last_attempt = 0.0
+        self.just_reconnected = False
+
+    async def _ensure_connected(self) -> bool:
+        if self._ws is not None and not self._ws.closed:
+            return True
+        now = time.monotonic()
+        if now - self._last_attempt < RECONNECT_COOLDOWN_SECONDS:
+            return False  # tried recently, don't hammer a server that's down
+        self._last_attempt = now
+        try:
+            self._ws = await self._session.ws_connect(WS_URL, timeout=_WS_CONNECT_TIMEOUT)
+            print(f"Streaming live to {WS_URL}")
+            self.just_reconnected = True
+            return True
+        except Exception:
+            self._ws = None
+            return False
+
+    async def send(self, entry: dict, history_before: list[dict] | None = None) -> bool:
+        """Sends `entry`. If this call is what (re)established the
+        connection, first replays `history_before` (in order, ahead of
+        `entry`) - so the dashboard catches up immediately on reconnect
+        instead of sitting blank until the next sparse game event, even
+        though the bridge itself has been working fine the whole time."""
+        was_connected = self._ws is not None and not self._ws.closed
+        if not await self._ensure_connected():
+            return False
+        try:
+            if self.just_reconnected:
+                self.just_reconnected = False
+                if history_before:
+                    print(f"Backfilling {len(history_before)} entries to the relay server...")
+                    for old_entry in history_before:
+                        await self._ws.send_str(json.dumps(old_entry))
+            await self._ws.send_str(json.dumps(entry))
+            return True
+        except Exception:
+            if was_connected:
+                print("Lost connection to relay server; will keep retrying in the background.")
+            self._ws = None
+            return False
+
+    async def close(self) -> None:
+        if self._ws is not None:
+            await self._ws.close()
+
 
 def _to_payload(record: ParsedRecord) -> dict:
     if isinstance(record, InfoUpdate):
@@ -94,6 +153,10 @@ class Bridge:
     def entry_count(self) -> int:
         return len(self._buffer)
 
+    @property
+    def entries(self) -> list[dict]:
+        return list(self._buffer)
+
     def save(self) -> None:
         OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
         OUTPUT_PATH.write_text(json.dumps(self._buffer), encoding="utf-8")
@@ -122,25 +185,15 @@ def _tap_lines(lines: Iterable[str], verbose: bool) -> Iterator[str]:
 async def run(lines_iter: Iterable[str], verbose: bool = False) -> None:
     bridge = Bridge()
     session = aiohttp.ClientSession()
-    ws = None
+    sender = RelaySender(session)
     try:
-        try:
-            ws = await session.ws_connect(WS_URL, timeout=_WS_CONNECT_TIMEOUT)
-            print(f"Streaming live to {WS_URL}")
-        except Exception as exc:
-            print(f"Could not connect to relay server ({exc}); saving to disk only.")
-
         count = 0
         try:
             for record in parse_lines(_tap_lines(lines_iter, verbose)):
                 entry = bridge.make_entry(record)
                 print(f"[{entry['kind']}] {entry['payload']}")
-                if ws is not None:
-                    try:
-                        await ws.send_str(json.dumps(entry))
-                    except Exception:
-                        print("Lost connection to relay server; continuing to save to disk only.")
-                        ws = None
+                # best-effort; self-reconnects (with backfill) if the relay comes back
+                await sender.send(entry, history_before=bridge.entries[:-1])
                 count += 1
                 if count % SAVE_EVERY_N_RECORDS == 0:
                     bridge.save()
@@ -148,8 +201,7 @@ async def run(lines_iter: Iterable[str], verbose: bool = False) -> None:
             bridge.save()
             print(f"\nSaved {bridge.entry_count} entries to {OUTPUT_PATH}")
     finally:
-        if ws is not None:
-            await ws.close()
+        await sender.close()
         await session.close()
 
 
