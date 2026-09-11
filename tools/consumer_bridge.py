@@ -212,6 +212,8 @@ def iter_subprocess_lines(exe_path: Path, game_id: int) -> Iterator[str]:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        encoding="utf-8",
+        errors="replace",  # consumer.exe's output isn't guaranteed to match the OS's default codepage
         bufsize=1,
         cwd=exe_path.parent,  # some native tools expect their own DLLs alongside them
     )
