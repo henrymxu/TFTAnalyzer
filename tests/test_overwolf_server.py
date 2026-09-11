@@ -2,18 +2,38 @@ import json
 
 from tft.models.champion import Champion
 from tft.models.item import Item
+from tft.models.trait import Trait, TraitTier
 from tft.overwolf_server import build_name_maps, create_app
 
 
 class _FakeCDragonClient:
     def get_champions(self):
         return [
-            Champion(api_name="TFT14_Draven", display_name="Draven", cost=1, icon_path="/Assets/Draven.tex"),
+            Champion(
+                api_name="TFT14_Draven",
+                display_name="Draven",
+                cost=1,
+                icon_path="/Assets/Draven.tex",
+                traits=("TFT14_Executioner",),
+            ),
             Champion(api_name="TFT14_NoIcon", display_name="No Icon", cost=1, icon_path=None),
         ]
 
     def get_items(self):
         return [Item(api_name="TFT_Item_InfinityEdge", display_name="Infinity Edge", icon_path="/Assets/IE.dds")]
+
+    def get_traits(self):
+        return [
+            Trait(
+                api_name="TFT14_Executioner",
+                display_name="Executioner",
+                icon_path="/Assets/Executioner.dds",
+                tiers=(TraitTier(min_units=2, style="bronze"), TraitTier(min_units=4, style="silver")),
+            )
+        ]
+
+    def get_augments(self):
+        return [Item(api_name="TFT9_Augment_Test", display_name="Test Augment", icon_path="/Assets/Augment.dds")]
 
 
 class _BrokenCDragonClient:
@@ -23,36 +43,53 @@ class _BrokenCDragonClient:
     def get_items(self):
         raise RuntimeError("network down")
 
+    def get_traits(self):
+        raise RuntimeError("network down")
+
+    def get_augments(self):
+        raise RuntimeError("network down")
+
 
 def test_build_name_maps_lowercases_api_names_as_keys():
     maps = build_name_maps(client=_FakeCDragonClient())
 
     assert maps["champions"]["tft14_draven"]["name"] == "Draven"
     assert maps["champions"]["tft14_draven"]["icon"] == "https://raw.communitydragon.org/latest/game/assets/draven.png"
+    assert maps["champions"]["tft14_draven"]["traits"] == ["TFT14_Executioner"]
     assert maps["items"]["tft_item_infinityedge"]["name"] == "Infinity Edge"
     assert maps["items"]["tft_item_infinityedge"]["icon"] == "https://raw.communitydragon.org/latest/game/assets/ie.png"
+    assert maps["augments"]["tft9_augment_test"]["name"] == "Test Augment"
+
+
+def test_build_name_maps_includes_trait_tiers():
+    maps = build_name_maps(client=_FakeCDragonClient())
+
+    trait = maps["traits"]["tft14_executioner"]
+    assert trait["name"] == "Executioner"
+    assert trait["tiers"] == [{"min_units": 2, "style": "bronze"}, {"min_units": 4, "style": "silver"}]
 
 
 def test_build_name_maps_handles_missing_icon_path():
     maps = build_name_maps(client=_FakeCDragonClient())
 
-    assert maps["champions"]["tft14_noicon"] == {"name": "No Icon", "icon": None}
+    assert maps["champions"]["tft14_noicon"] == {"name": "No Icon", "icon": None, "traits": []}
 
 
 def test_build_name_maps_degrades_gracefully_on_failure():
     maps = build_name_maps(client=_BrokenCDragonClient())
 
-    assert maps == {"champions": {}, "items": {}}
+    assert maps == {"champions": {}, "items": {}, "traits": {}, "augments": {}}
 
 
 async def test_names_route_serves_built_name_maps(aiohttp_client, mocker):
-    mocker.patch("tft.overwolf_server.build_name_maps", return_value={"champions": {"a": "A"}, "items": {}})
+    fake_maps = {"champions": {"a": "A"}, "items": {}, "traits": {}, "augments": {}}
+    mocker.patch("tft.overwolf_server.build_name_maps", return_value=fake_maps)
     client = await aiohttp_client(create_app())
 
     resp = await client.get("/names.json")
 
     assert resp.status == 200
-    assert await resp.json() == {"champions": {"a": "A"}, "items": {}}
+    assert await resp.json() == fake_maps
 
 
 async def test_static_index_is_served(aiohttp_client):

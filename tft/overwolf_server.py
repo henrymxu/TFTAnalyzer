@@ -86,37 +86,61 @@ async def index_handler(request: web.Request) -> web.FileResponse:
     return web.FileResponse(WEBAPP_DIR / "index.html")
 
 
+def _icon(icon_path: str | None) -> str | None:
+    return CDragonClient.icon_url(icon_path) if icon_path else None
+
+
 def build_name_maps(client: CDragonClient | None = None) -> dict:
-    """Champion/item apiName -> {name, icon}, from the same Community
-    Dragon source tft.static_data already uses - for prettifying the raw
-    internal names (e.g. "TFT14_Draven", or PvE-variant names like
-    "DA_Draven18") the game events stream carries, and for showing real
-    icons instead of text. icon is a directly hotlinkable CDN URL (or
-    None if the set data had no icon for that entry) - the browser loads
-    it straight from Community Dragon, this server never proxies bytes.
-    Degrades to empty maps (the webapp falls back to a heuristic name
-    cleanup and text-only cells) rather than failing the request if
-    Community Dragon isn't reachable."""
+    """Champion/item/augment apiName -> {name, icon}, plus trait apiName ->
+    {name, icon, tiers}, from the same Community Dragon source
+    tft.static_data already uses - for prettifying the raw internal names
+    (e.g. "TFT14_Draven", or PvE-variant names like "DA_Draven18") the
+    game events stream carries, for showing real icons instead of text,
+    and for computing active/inactive trait synergies from the current
+    board (champions carry their own trait apiNames; the webapp tallies
+    them against each trait's tier thresholds). icon is a directly
+    hotlinkable CDN URL (or None if the set data had none) - the browser
+    loads it straight from Community Dragon, this server never proxies
+    bytes. Each category degrades independently to an empty map (the
+    webapp falls back to a heuristic name cleanup and text-only cells,
+    and simply shows no traits) rather than failing the whole request if
+    Community Dragon isn't reachable or one category's shape changed."""
     client = client or CDragonClient()
     champions: dict[str, dict] = {}
     items: dict[str, dict] = {}
+    traits: dict[str, dict] = {}
+    augments: dict[str, dict] = {}
+
     try:
         for champ in client.get_champions():
             champions[champ.api_name.lower()] = {
                 "name": champ.display_name,
-                "icon": CDragonClient.icon_url(champ.icon_path) if champ.icon_path else None,
+                "icon": _icon(champ.icon_path),
+                "traits": list(champ.traits),
             }
     except Exception:
         logger.warning("Could not fetch champion names from Community Dragon", exc_info=True)
     try:
         for item in client.get_items():
-            items[item.api_name.lower()] = {
-                "name": item.display_name,
-                "icon": CDragonClient.icon_url(item.icon_path) if item.icon_path else None,
-            }
+            items[item.api_name.lower()] = {"name": item.display_name, "icon": _icon(item.icon_path)}
     except Exception:
         logger.warning("Could not fetch item names from Community Dragon", exc_info=True)
-    return {"champions": champions, "items": items}
+    try:
+        for trait in client.get_traits():
+            traits[trait.api_name.lower()] = {
+                "name": trait.display_name,
+                "icon": _icon(trait.icon_path),
+                "tiers": [{"min_units": t.min_units, "style": t.style} for t in trait.tiers],
+            }
+    except Exception:
+        logger.warning("Could not fetch trait data from Community Dragon", exc_info=True)
+    try:
+        for augment in client.get_augments():
+            augments[augment.api_name.lower()] = {"name": augment.display_name, "icon": _icon(augment.icon_path)}
+    except Exception:
+        logger.warning("Could not fetch augment data from Community Dragon", exc_info=True)
+
+    return {"champions": champions, "items": items, "traits": traits, "augments": augments}
 
 
 async def names_handler(request: web.Request) -> web.Response:
