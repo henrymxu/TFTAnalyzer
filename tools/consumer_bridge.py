@@ -20,6 +20,12 @@ Two modes:
 Either way, start tft.overwolf_server first (`python -m tft.overwolf_server`)
 so there's something listening at ws://localhost:8765/ws - if it's not
 running, this still saves everything to disk, it just won't stream live.
+
+Add --verbose to either mode to print every raw line received before
+parsing - useful if nothing seems to be happening, since it distinguishes
+"the source produced no output at all" (e.g. consumer.exe exiting
+immediately - often a missing DLL) from "output arrived but didn't match
+the expected format".
 """
 
 from __future__ import annotations
@@ -40,6 +46,11 @@ WS_URL = "ws://localhost:8765/ws"
 OUTPUT_PATH = Path("consumer_bridge_output/events.json")
 MAX_BUFFER_ENTRIES = 5000
 SAVE_EVERY_N_RECORDS = 5
+
+try:
+    _WS_CONNECT_TIMEOUT = aiohttp.ClientWSTimeout(ws_close=3)
+except AttributeError:  # older aiohttp without ClientWSTimeout
+    _WS_CONNECT_TIMEOUT = 3
 
 
 def _to_payload(record: ParsedRecord) -> dict:
@@ -85,20 +96,40 @@ class Bridge:
         OUTPUT_PATH.write_text(json.dumps(self._buffer), encoding="utf-8")
 
 
-async def run(lines_iter: Iterable[str]) -> None:
+def _tap_lines(lines: Iterable[str], verbose: bool) -> Iterator[str]:
+    """Passes lines through unchanged, optionally printing each raw line
+    first - so a source that produces no parseable records is visibly
+    different from one that produces no output at all."""
+    saw_any = False
+    for line in lines:
+        saw_any = True
+        if verbose:
+            print(f"[raw] {line.rstrip()}")
+        yield line
+    if not saw_any:
+        print(
+            "\nNo output at all was received from the source before it ended. "
+            "If using --exe, this usually means the process exited immediately "
+            "(e.g. a missing dependency DLL, or it needs to be run from its own "
+            "folder) - try running it directly, outside this bridge, and see what "
+            "happens."
+        )
+
+
+async def run(lines_iter: Iterable[str], verbose: bool = False) -> None:
     bridge = Bridge()
     session = aiohttp.ClientSession()
     ws = None
     try:
         try:
-            ws = await session.ws_connect(WS_URL, timeout=3)
+            ws = await session.ws_connect(WS_URL, timeout=_WS_CONNECT_TIMEOUT)
             print(f"Streaming live to {WS_URL}")
         except Exception as exc:
             print(f"Could not connect to relay server ({exc}); saving to disk only.")
 
         count = 0
         try:
-            for record in parse_lines(lines_iter):
+            for record in parse_lines(_tap_lines(lines_iter, verbose)):
                 entry = bridge.make_entry(record)
                 print(f"[{entry['kind']}] {entry['payload']}")
                 if ws is not None:
@@ -120,14 +151,22 @@ async def run(lines_iter: Iterable[str]) -> None:
 
 
 def iter_subprocess_lines(exe_path: Path) -> Iterator[str]:
+    print(f"Launching {exe_path} ...")
     process = subprocess.Popen(
-        [str(exe_path)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
+        [str(exe_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        cwd=exe_path.parent,  # some native tools expect their own DLLs alongside them
     )
     assert process.stdout is not None
     try:
         yield from process.stdout
     finally:
         process.terminate()
+        returncode = process.wait(timeout=5)
+        print(f"{exe_path.name} exited with code {returncode}")
 
 
 def iter_file_lines(path: Path, delay_seconds: float = 0.0) -> Iterator[str]:
@@ -146,12 +185,15 @@ def main() -> None:
     parser.add_argument(
         "--replay-delay", type=float, default=0.0, help="Seconds to sleep between replayed lines (default: as fast as possible)."
     )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print every raw line received before parsing, for troubleshooting."
+    )
     args = parser.parse_args()
 
     lines_iter = iter_subprocess_lines(args.exe) if args.exe else iter_file_lines(args.replay, args.replay_delay)
 
     try:
-        asyncio.run(run(lines_iter))
+        asyncio.run(run(lines_iter, verbose=args.verbose))
     except KeyboardInterrupt:
         pass
 
